@@ -588,9 +588,9 @@ Test_Math_FixDiv_Simp
 ;--- Data ---
 
 .Input
-    dc.l $6     ;Dividend
-    dc.l $3     ;Divisor
-    dc.l $2     ;Expected Quotient
+    dc.l $00000006     ;Dividend
+    dc.l $00000003     ;Divisor
+    dc.l $00020000     ;Expected Quotient
 
 .Name
     dc.b 'UnitTests_MathUtils:Test_Math_FixDiv_Simp',0
