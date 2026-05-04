@@ -68,11 +68,11 @@ MAIN
 
 GetInput
     ;Display Prompt
-    lea .Promt_1,a1
+    lea .Prompt_1,a1
     jsr Trap_DisplayString_LB
-    lea .Promt_2,a1
+    lea .Prompt_2,a1
     jsr Trap_DisplayString_LB
-    lea .Promt_3,a1
+    lea .Prompt_3,a1
     jsr Trap_DisplayString_LB
 
     ;Capture Input
@@ -95,12 +95,12 @@ GetInput
     rts
 
 ;=== Data ===
-.Promt_1  
+.Prompt_1  
     dc.b 'Input operation in format of Operand Operator Operand (eg. a + b),',CR,LF
     dc.b 'spaces are ignored',0
-.Promt_2
+.Prompt_2
     dc.b 'Operations are constrained to signed 16-bit fixed point values meaning',0
-.Promt_3
+.Prompt_3
     dc.b 'Operands and Results must maintain values between -32768.65535 and 32767.65535.',CR,LF 
     dc.b 'Operators + - * / are supported',0
 
@@ -180,7 +180,7 @@ ProcessInput
     sub.b #48,d0
 
     ;Shift Destination Up 1 Decimal Place
-    muls #10,d1 ;TODO optimize to use bitshifting? (<<3 + <<1) test to see if it's actually faster
+    muls #10,d1 ;TODO optimize to use bit shifting? (<<3 + <<1) test to see if it's actually faster
 
     ;If Overflow ;TODO implement
         ;Error too many digits
@@ -328,7 +328,7 @@ ProcessInput
     dbra d3,.ProcessFractDo     ;While Precision    (check conditional first, don't want to shift if no precision, also removes need to pre decrement)
     rts                         ;Else Exit Loop
 .ProcessFractDo                 ;Do Shift
-    jsr Math_DivShift_10        ;Divide D1 by 10 using shifting math to allow operations above word bounry 
+    jsr Math_DivShift_10        ;Divide D1 by 10 using shifting math to allow operations above word boundary
     bra .ProcessFractWhile      ;Loop
 ;------
 

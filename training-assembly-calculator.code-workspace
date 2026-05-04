@@ -4,5 +4,17 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"cSpell.words": [
+			"bitshifting",
+			"dbra",
+			"divu",
+			"Fract",
+			"movem",
+			"muls",
+			"Mult",
+			"mulu",
+			"SIMHALT"
+		]
+	}
 }

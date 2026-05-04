@@ -131,7 +131,7 @@ Test_Char_IsInList_False
 ;------------------------------------------
 
 ;------------------------------------------
-;--- Char_IsInList Ivalid Input -------
+;--- Char_IsInList Invalid Input -------
 
 ;Given Null with Null in List, Sets CCR Z Flag to False
 

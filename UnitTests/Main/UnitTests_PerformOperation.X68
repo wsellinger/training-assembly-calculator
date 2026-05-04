@@ -141,7 +141,7 @@ Test_PerfOp_Add_Dec
 ;------------------------------------------
 ;--- PerformOperation Subtract --------
 
-;Given processed add operation input, calulates and returns the correct result
+;Given processed add operation input, calculates and returns the correct result
 
 ;=== Main Test ===
 
@@ -258,7 +258,7 @@ Test_PerfOp_Sub_Dec
 ;------------------------------------------
 ;--- PerformOperation Multiply --------
 
-;Given processed add operation input, calulates and returns the correct result
+;Given processed add operation input, calculates and returns the correct result
 
 ;=== Main Test ===
 
@@ -375,7 +375,7 @@ Test_PerfOp_Mul_Dec
 ;------------------------------------------
 ;--- PerformOperation Divide ----------
 
-;Given processed add operation input, calulates and returns the correct result
+;Given processed add operation input, calculates and returns the correct result
 
 ;=== Main Test ===
 
