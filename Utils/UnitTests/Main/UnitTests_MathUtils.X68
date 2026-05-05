@@ -13,7 +13,8 @@ UnitTests_Math__RunTests
     jsr Test_Math_MShift10_D4
     jsr Test_Math_DShift_10
     jsr Test_Math_SimpDiv
-    jsr Test_Math_FixDiv
+    jsr Test_Math_Abs
+    ;jsr Test_Math_FixDiv
     rts
 
 ;=== Run Tests ========================

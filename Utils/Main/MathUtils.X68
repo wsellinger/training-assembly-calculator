@@ -196,6 +196,39 @@ Math_SimpDiv
 ;==========================================
 
 ;==========================================
+;=== Absolute Value ===================
+
+;Get the absolute value of a number and return if it was negative
+
+;=== Subroutine ===
+Math_Abs
+
+;=== Registers ===
+;   Input/Output
+;   d0 = Input/Absolute Value
+;   Output
+;   CCR - Z = bool return, True if Negative, False if Positive
+
+;=== Logic ===
+;Math_Abs
+
+    ;Check if Negative
+    tst.l d0
+    bge .Positive
+
+    ;Make Positive
+    neg.l d0
+    jsr Set_True
+    rts
+
+.Positive
+    jsr Set_False
+    rts    
+
+;=== Absolute Value ===================
+;==========================================
+
+;==========================================
 ;=== Fixed Point Division =============
 
 ;Divide 2 fixed point numbers and process the remainder into
