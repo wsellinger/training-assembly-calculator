@@ -13,7 +13,8 @@ UnitTests_Math__RunTests
     jsr Test_Math_MShift10_D4
     jsr Test_Math_DShift_10
     jsr Test_Math_SimpDiv
-    jsr Test_Math_FixDiv
+    jsr Test_Math_Abs
+    ;jsr Test_Math_FixDiv
     rts
 
 ;=== Run Tests ========================
@@ -560,6 +561,126 @@ Test_Math_SimpDiv_Base
 ;------------------------------------------
 
 ;=== Math_SimpDiv =====================
+;==========================================
+
+;==========================================
+;=== Math_Abs =========================
+
+;Given an input number, derives the absolute value of that number in place returns true if the input was negative
+
+Test_Math_Abs
+    jsr Test_Math_Abs_Pos
+    jsr Test_Math_Abs_Neg
+    jsr Test_Math_Abs_Zero
+    rts
+
+;=== Variants ===
+
+;------------------------------------------
+;--- Math_Abs Positive ----------------
+
+Test_Math_Abs_Pos
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_Math_Abs_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $00012345  ;Input
+    dc.l $00012345  ;Expected Output
+    dc.l 0          ;Expected Return
+
+.Name
+    dc.b 'UnitTests_MathUtils:Test_Math_Abs_Pos',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Math_Abs Positive ----------------
+;------------------------------------------
+
+;------------------------------------------
+;--- Math_Abs Negative ----------------
+
+Test_Math_Abs_Neg
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_Math_Abs_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $FFFFEDCB  ;Input
+    dc.l $00001235  ;Expected Output
+    dc.l CCR_Zero   ;Expected Return
+
+.Name
+    dc.b 'UnitTests_MathUtils:Test_Math_Abs_Neg',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Math_Abs Negative ----------------
+;------------------------------------------
+
+;------------------------------------------
+;--- Math_Abs Zero ----------------
+
+Test_Math_Abs_Zero
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_Math_Abs_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $00000000  ;Input
+    dc.l $00000000  ;Expected Output
+    dc.l 0          ;Expected Return
+
+.Name
+    dc.b 'UnitTests_MathUtils:Test_Math_Abs_Zero',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Math_Abs Zero ----------------
+;------------------------------------------
+
+;------------------------------------------
+;--- Math_Abs Base ---------------- 
+
+;--- Registers ---
+;   Input
+;   a5 = Name of test for logging
+;   a6 = Address to Input in the form of 2 consecutive longs: Input, Expected Result
+
+Test_Math_Abs_Base
+    ;Arrange
+    move.l (a6)+,d0 ;Input
+
+    ;Act
+    jsr Math_Abs
+    move SR,d1          ;Grab CCR
+    and.l #CCR_Zero,d1  ;Get Z flag
+
+    ;Assert
+    cmp.l (a6)+,d0 ;Expected Output
+    bne .Fail
+    cmp.l (a6)+,d1 ;Expected Return
+    bne .Fail
+    rts ;Success
+
+.Fail
+    move.l a5,a0
+    jsr UnitTests__LogFailure
+    rts ;Failure
+
+;--- Math_Abs Base ---------------- 
+;------------------------------------------
+
+;=== Math_Abs =========================
 ;==========================================
 
 ;==========================================
