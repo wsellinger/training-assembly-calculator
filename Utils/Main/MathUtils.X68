@@ -235,7 +235,7 @@ Math_Abs
 ;   fixed point notation
 
 ;=== Subroutine ===
-Math_FixDiv ;TODO Unit Test
+Math_FixDiv
 
 ;=== Registers ===
 ;   Input/Output
@@ -244,76 +244,131 @@ Math_FixDiv ;TODO Unit Test
 ;   d3 = Quotient
 ;
 ;   Internal
-;   d4 = Fractional
-;   d5 = Working
-.Registers reg d4-d5
+;   d4 = Remainder
+;   d5 = Result Sign
+;   d6 = Working
+.Registers reg d4-d6
 
 ;=== Logic ===
 ;Math_FixDiv
 
     ;Save Registers
     movem.l .Registers,-(sp)
-
-    ;Divide
-    divs d2,d1
-
-    ;TODO check for overflow
-
-    ;Get Quotient
-    clr.l d3
-    move.w d1,d3
-    swap d3
-
-.LoopRem
-    ;Get Remainder
-    clr.w d1
-    swap d1
-
-    ;If Remainder Is Zero
-    cmp.w #0,d1
-    beq .LoopRemEnd
-
-    ;If Out of fractional bits
-    cmp #10000,d4
-    bge .LoopRemEnd
-
-.LoopMul
-    ;Multiply Remainder and Fractional
-    jsr Math_MulShift_10_D1
-    jsr Math_MulShift_10_D4
-
-    ;Loop if too small
-    cmp.l d1,d2
-    blt .LoopMul
-
-    ;Divide Remainder
-    divu d2,d1
-
-    ;Save Result
-    add.w d1,d4
-
-    ;Loop
-    bra .LoopRem
-.LoopRemEnd
-
-    ;Convert Fractional
-    swap d4
-    move.l d4,d1
-
-.LoopFractional
-    jsr Math_DivShift_10
     
-    ;Loop if too big
-    cmp.l #$0000FFFF,d2
-    bhi.l .LoopFractional
+    ;Set Default Values
+    jsr .ClearInternal
 
-    add.w d1,d3
+    ;Check for Divide by Zero
+    tst.l d2
+    beq .ThrowDivideByZero
 
+    ;Strip Input Signs, Save Result Sign
+    jsr .StripSigns
+
+    ;Binary Long Division to Integer
+    move.l #31, d6  ;Loop full Dividend (32 bits)
+    jsr .BinLongDiv
+
+    ;Check for Overflow
+    jsr .CheckOverflow
+    beq .ThrowOverflow
+
+    ;Process Remainder to Fractional
+    move.l #15, d6  ;Loop full Fractional (16 bits)
+    jsr .BinLongDiv
+
+    ;Apply Result Sign
+    jsr .ApplySign
+
+    ;Return
+    bra .Return
+
+.ThrowDivideByZero
+    move.l #0,d3            ;Return 0 on divide by zero
+    or #CCR_Carry,ccr       ;Set Carry Flag to indicate error
+    bra .Return
+
+.ThrowOverflow
+    move.l #0,d3            ;Return 0 on overflow
+    or #CCR_OverFlow,ccr    ;Set Overflow Flag
+
+.Return
     ;Restore Registers
     movem.l (sp)+,.Registers
 
     ;Return
     rts
+
+;--- Local Subroutines --------------------
+
+;--- Clear Internal
+.ClearInternal
+    clr.l d4
+    clr.l d5
+    clr.l d6
+    rts
+;------
+
+;--- Strip Signs
+.StripSigns
+    ;Strip Sign from Dividend
+    move.l d1,d0 
+    jsr Math_Abs
+    move.w SR,d5        ;Save Dividend Sign
+    and.l #CCR_Zero,d5  ;Isolate Sign Bit
+    move.l d0,d1        ;Save Absolute Value Back to Dividend
+
+    ;Strip Sign from Divisor
+    move.l d2,d0 
+    jsr Math_Abs
+    move.w SR,d6        ;Save Divisor Sign
+    and.l #CCR_Zero,d6  ;Isolate Sign Bit
+    move.l d0,d2        ;Save Absolute Value Back to Divisor
+
+    ;Determine Result Sign
+    eor.l d6,d5         ;If Signs are Different, Result is Negative
+
+    rts
+;------
+
+;--- Binary Long Division
+.BinLongDiv
+    ;Get Next Bit
+    asl.l #1, d1            ;Shift Dividend left bit to X (0 during fractional))
+    roxl.l #1, d4           ;Rotate X to Remainder
+    asl.l #1, d3            ;Shift Quotient left for next bit
+
+    ;Compare        
+    cmp.l d4, d2            ;If Divisor > Remainder 
+    bhi .DivSkip            ;Result bit stays 0
+    sub.l d2, d4            ;Else Subtract Divisor
+    add.l #1, d3            ;Set result to 1
+.DivSkip
+    dbra d6, .BinLongDiv    ;Set Iterator outside loop
+    rts
+;------
+
+;--- Check Overflow
+.CheckOverflow
+    swap d3             ;Get overflow bits
+    tst.w d3            ;If exceeds word length (overflow bits non-zero )
+    bne .OverFlowSkip   ;Return Overflow
+    swap d3             ;Else clean up
+    jsr Set_False
+    rts
+.OverFlowSkip
+    jsr Set_True
+    rts
+;------
+
+;--- Apply Result Sign
+.ApplySign
+    tst.l d5        ;If zero
+    beq .SignSkip   ;Positive
+    neg.l d3        ;Else Negative
+.SignSkip
+    rts
+;------
 
 ;=== Fixed Point Division =============
 ;==========================================

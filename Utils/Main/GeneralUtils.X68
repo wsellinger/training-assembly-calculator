@@ -11,6 +11,8 @@
 
 CCR_All equ %11111111
 CCR_Zero equ %00000100
+CCR_OverFlow equ %00000010
+CCR_Carry equ %00000001
 
 ByteAsBits equ 8
 LongAsBytes equ 4

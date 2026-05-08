@@ -6,6 +6,12 @@
 *-----------------------------------------------------------
 
 ;==========================================
+;=== Includes =============================
+;==========================================
+
+    INCLUDE "Utils/UnitTests/Main/UnitTests_MathUtils/UnitTests_FixedPointDivision.X68"
+
+;==========================================
 ;=== Run Tests ========================
 
 UnitTests_Math__RunTests
@@ -14,7 +20,7 @@ UnitTests_Math__RunTests
     jsr Test_Math_DShift_10
     jsr Test_Math_SimpDiv
     jsr Test_Math_Abs
-    ;jsr Test_Math_FixDiv
+    jsr Test_Math_FixDiv
     rts
 
 ;=== Run Tests ========================
@@ -681,75 +687,6 @@ Test_Math_Abs_Base
 ;------------------------------------------
 
 ;=== Math_Abs =========================
-;==========================================
-
-;==========================================
-;=== Math_FixDiv ======================
-
-;Given an input number, divides it by 10 and puts the result in the same register
-
-;=== Main Test ===
-
-Test_Math_FixDiv
-    jsr Test_Math_FixDiv_Simp
-    rts
-
-;=== Variants ===
-
-;------------------------------------------
-;--- Math_FixDiv Simple ---------------
-
-Test_Math_FixDiv_Simp
-    jsr UnitTests_ClearRegisters
-    lea .Input,a6
-    lea .Name,a5
-    jsr Test_Math_FixDiv_Base
-    rts
-
-;--- Data ---
-
-.Input
-    dc.l $00000006     ;Dividend
-    dc.l $00000003     ;Divisor
-    dc.l $00020000     ;Expected Quotient
-
-.Name
-    dc.b 'UnitTests_MathUtils:Test_Math_FixDiv_Simp',0
-    ORG (*+3)&-4 ;Force Long Word alignment
-
-;--- Math_FixDiv Simple ---------------
-;------------------------------------------
-
-;------------------------------------------
-;--- Math_FixDiv Base -----------------
-
-;--- Registers ---
-;   Input
-;   a5 = Name of test for logging
-;   a6 = Address to Input in the form of 2 consecutive longs: Input, Expected Result
-
-Test_Math_FixDiv_Base
-    ;Arrange
-    move.l (a6)+,d1 ;Dividend
-    move.l (a6)+,d2 ;Divisor
-
-    ;Act
-    jsr Math_FixDiv
-
-    ;Assert
-    cmp.l (a6)+,d3 ;Expected Dividend
-    bne .Fail
-    rts ;Success
-
-.Fail
-    move.l a5,a0
-    jsr UnitTests__LogFailure
-    rts ;Failure
-
-;--- Math_FixDiv Base -----------------
-;------------------------------------------
-
-;=== Math_FixDiv ======================
 ;==========================================
 
 *~Font name~Courier New~
