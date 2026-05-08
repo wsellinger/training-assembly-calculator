@@ -458,18 +458,12 @@ PerformOperation
     move.l d5,d1    ;Get Left
     move.l d6,d2    ;Get Right
 
-    ;TODO check for div by 0
-
-    ;Simplify Divisor
-    jsr Math_SimpDiv
-
-    ;Fixed Point Division
-    jsr Math_FixDiv
-    move.l d3,d1
+    jsr Math_FixDiv ;Divide (Handles Precision and Sign)
+    ;TODO handle divide by zero and overflow errors
+    move.l d3,d1    ;Move Result to Output
 
 .Result
     ;Validate Result
-    ;TODO check for overflow V flag
 
     ;Return
     rts
