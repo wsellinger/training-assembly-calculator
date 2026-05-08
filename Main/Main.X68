@@ -406,7 +406,9 @@ PerformOperation
     bra .Result
 
 .Mul
+    ;TODO convert to subroutine
     ;TODO check for overflows?
+    ;TODO this has the signed problem as well, need to make a subroutine that works for mul and div 
     
     ;Multiply Fractional
     clr.l d2        ;Clear Left Temp

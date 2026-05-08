@@ -24,7 +24,7 @@ UnitTests_PerformOperation
 ;------------------------------------------
 ;--- PerformOperation Add -------------
 
-;Given processed add operation input, calulates and returns the correct result
+;Given processed add operation input, calculates and returns the correct result
 
 ;=== Main Test ===
 
@@ -267,6 +267,8 @@ Test_PerformOperation_Mul
     jsr Test_PerfOp_Mul_Max
     jsr Test_PerfOp_Mul_Min
     jsr Test_PerfOp_Mul_Dec
+    ;TODO add more tests for mul, especially for edge cases like multiplying by 0, multiplying by 1, multiplying two negative numbers, etc
+    
     rts
 
 ;=== Variants ===

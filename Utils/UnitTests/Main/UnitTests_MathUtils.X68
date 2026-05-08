@@ -29,13 +29,12 @@ UnitTests_Math__RunTests
 ;==========================================
 ;=== Math_MulShift_10_D1 ==============
 
-;Given an input number, divides it by 10 and puts the result in the same register
+;Given an input number, multiply it by 10 and puts the result in the same register
 
 ;=== Main Test ===
 
 Test_Math_MShift10_D1
     jsr Test_Math_MShift10_D1_Simp
-    jsr Test_Math_MShift10_D1_Min
     jsr Test_Math_MShift10_D1_Min
     jsr Test_Math_MShift10_D1_Max
     rts
@@ -145,7 +144,7 @@ Test_Math_MShift10_D1_Base
 ;==========================================
 ;=== Math_MulShift_10_D4 ==============
 
-;Given an input number, divides it by 10 and puts the result in the same register
+;Given an input number, multiplies it by 10 and puts the result in the same register
 
 ;=== Main Test ===
 
@@ -422,7 +421,7 @@ Test_Math_DShift_10_Base
 ;==========================================
 ;=== Math_SimpDiv =====================
 
-;Given an input number, divides it by 10 and puts the result in the same register
+;Given a dividend and divisor, simplifies the division equation until the divisor is within the Word limit
 
 ;=== Main Test ===
 
@@ -668,7 +667,7 @@ Test_Math_Abs_Base
 
     ;Act
     jsr Math_Abs
-    move SR,d1          ;Grab CCR
+    move.w SR,d1        ;Grab CCR
     and.l #CCR_Zero,d1  ;Get Z flag
 
     ;Assert

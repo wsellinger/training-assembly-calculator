@@ -6,14 +6,17 @@
 	],
 	"settings": {
 		"cSpell.words": [
+			"addq",
 			"bitshifting",
 			"dbra",
 			"divu",
 			"Fract",
 			"movem",
+			"moveq",
 			"muls",
 			"Mult",
 			"mulu",
+			"roxl",
 			"SIMHALT"
 		]
 	}
