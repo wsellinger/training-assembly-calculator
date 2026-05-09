@@ -527,19 +527,65 @@ PerformOperation
 ;=== Registers ===
 ;   Internal
 ;   d0 = Trap
+;   d2 = Temp Storage
+;   d3 = Iterator
 ;
 ;   Input
 ;   d1 = Result
 
 DisplayResult
-    ;TODO implement decimal display
-    ;TODO round up/down when fractional part lost precision?
+    ;Display Sign
+    tst.l d1                    ;If Positive
+    bge .SkipSign               ;Skip Displaying Sign
+    neg.l d1                    ;Else Strip Sign
+    lea .NegativeSign,a1        ;Load Negative Sign
+    jsr Trap_DisplayString      ;Display Sign
+.SkipSign
 
-    jsr Trap_DisplayNum
+    ;Display Integer Part
+    move.w d1,d2                ;Save Fractional Part
+    clr.w d1                    ;Clear Fractional Part
+    swap d1                     ;Swap Integer Part to Lower Word
+    jsr Trap_DisplayNum         ;Display Integer Part
+
+    ;Check for Fractional
+    tst.w d2                    ;If No Fractional
+    beq .Return                 ;Exit
+
+    ;Display Decimal Point
+    lea .DecimalPoint,a1
+    jsr Trap_DisplayString
+
+    ;Convert Fractional
+    move.w d2,d1                ;Get Fractional Part
+    clr.l d2                    ;Clear Temp Storage
+    lea .FractionalBuffer,a1    ;Load Buffer Address
+    move.l #4,d3                ;Set Precision (5 Decimal Places)
+
+.LoopFractional
+    jsr Math_MulShift_10_D1     ;Shift Next Fractional Digit into Integer
+    move.l d1,d2                ;Save Integer Digit
+    and.l #$0000FFFF,d1         ;Clear Integer Digit
+    swap d2                     ;Swap  Integer Digit to Lower Byte
+    add.b #'0',d2               ;Convert to Char
+    move.b d2,(a1)+             ;Save Char to Buffer
+    dbra d3,.LoopFractional     ;Loop for Precision
+    clr.b (a1)                  ;Null Terminate Buffer
+
+.DisplayDecimal
+    lea .FractionalBuffer,a1    ;Load Buffer Address
+    jsr Trap_DisplayString
+
+.Return
     rts
 
 ;=== Data ===
-    
+.NegativeSign dc.b '-',0
+.DecimalPoint dc.b '.',0
+.FractionalBuffer ds.b 6 ;5 decimal places plus null terminator
+
+    ORG (*+3)&-4 ;Force Long Word alignment
+
 ;=== Display Result ===================
 ;==========================================
 
