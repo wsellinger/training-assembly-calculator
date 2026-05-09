@@ -12,7 +12,7 @@ UnitTests_PerformOperation
     jsr Test_PerformOperation_Add
     jsr Test_PerformOperation_Sub
     jsr Test_PerformOperation_Mul
-    ;jsr Test_PerformOperation_Div ;TODO implement
+    jsr Test_PerformOperation_Div
     rts
 
 ;=== Run Tests ========================
@@ -382,18 +382,16 @@ Test_PerfOp_Mul_Dec
 ;=== Main Test ===
 
 Test_PerformOperation_Div
-    jsr Test_PerfOp_Div_Simple
-    jsr Test_PerfOp_Div_Max
-    jsr Test_PerfOp_Div_Min
-    ;jsr Test_PerfOp_Div_Dec ;TODO Implement
+    jsr Test_PerfOp_Div_Int
+    jsr Test_PerfOp_Div_Fix
     rts
 
 ;=== Variants ===
 
-;--------------
-;--- Simple ---
+;-----------
+;--- Int ---
 
-Test_PerfOp_Div_Simple
+Test_PerfOp_Div_Int
     jsr UnitTests_ClearRegisters
     lea .Input,a6
     lea .Name,a5
@@ -401,22 +399,22 @@ Test_PerfOp_Div_Simple
     rts
 
 .Input
-    dc.l 6
-    dc.l 3
+    dc.l $00060000     ;Dividend  6.0
+    dc.l $00030000     ;Divisor   3.0
     dc.b 0,0,0,'/'
-    dc.l 2
+    dc.l $00020000     ;Expected  2.0
 
 .Name
-    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_Simple',0
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_Int',0
     ORG (*+3)&-4 ;Force Long Word alignment
 
-;--- Simple ---
+;--- Int ---
 ;--------------
 
 ;-----------
-;--- Max ---
+;--- Fix ---
 
-Test_PerfOp_Div_Max
+Test_PerfOp_Div_Fix
     jsr UnitTests_ClearRegisters
     lea .Input,a6
     lea .Name,a5
@@ -426,41 +424,16 @@ Test_PerfOp_Div_Max
 ;--- Data ---
 
 .Input
-    dc.l $7FFF
-    dc.l $1249
+    dc.l $0003C000     ;Dividend  3.75
+    dc.l $00018000     ;Divisor   1.5
     dc.b 0,0,0,'/'
-    dc.l $7
+    dc.l $00028000     ;Expected  2.5
 
 .Name
-    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_Max',0
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_Fix',0
     ORG (*+3)&-4 ;Force Long Word alignment
 
-;--- Max ---
-;-----------
-
-;-----------
-;--- Min ---
-
-Test_PerfOp_Div_Min
-    jsr UnitTests_ClearRegisters
-    lea .Input,a6
-    lea .Name,a5
-    jsr Test_PerformOperation_Base
-    rts
-
-;--- Data ---
-
-.Input
-    dc.l $8000
-    dc.l $4000
-    dc.b 0,0,0,'/'
-    dc.l $2
-
-.Name
-    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_Min',0
-    ORG (*+3)&-4 ;Force Long Word alignment
-
-;--- Min ---
+;--- Fix ---
 ;-----------
 
 ;--- PerformOperation Divide ----------

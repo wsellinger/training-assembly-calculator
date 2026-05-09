@@ -31,9 +31,11 @@ MAIN
 
     ;Process Input
     jsr ProcessInput
+    bne .Error
 
     ;Perform Operation
     jsr PerformOperation
+    bne .Error
 
     ;Display Output
     jsr DisplayResult
@@ -84,14 +86,18 @@ GetInput
     cmp.w #3,d1 
     blt .Error
 
-    ;Return
     jsr Set_True
-    rts
+    bra .Return
 
 .Error
-    lea .ErrorMsg,a0
+    lea .ErrorMsg_InvalidInput,a0
     lea Main_ErrorMsgPtr,a1
     move.l a0,(a1)
+    jsr Set_False
+    bra .Return
+
+.Return
+    ;Return
     rts
 
 ;=== Data ===
@@ -106,7 +112,7 @@ GetInput
 
 .Operation ds.b 25
 
-.ErrorMsg dc.b 'Invalid Input - Input must be at least 3 characters long',0
+.ErrorMsg_InvalidInput dc.b 'Invalid Input - Input must be at least 3 characters long',0
 
     ORG (*+3)&-4 ;Force Long Word alignment
     
@@ -193,8 +199,9 @@ ProcessInput
     bra .LoopOperand
 
 .IsDecimalPoint
-    ;If Precision is already in use (not FFFFFFFF) ;TODO implement
-        ;Error Too Many Decimals in Operand
+    ;Ensure only one decimal point
+    cmp.l #.PrecisionDefault,d3
+    bne .Error_OneDec
 
     ;Store Whole Value
     jsr .StoreCurOp
@@ -204,9 +211,10 @@ ProcessInput
 
     bra .LoopOperand
 
-.IsOperator
-    ;If Operator Already Stored ;TODO implement
-        ;Error, Too Many Operators
+.IsOperator   
+    ;Ensure only one operator
+    tst.l d7
+    bne .Error_OneOp
 
     ;Store Operator
     move.b d0,d7
@@ -227,7 +235,30 @@ ProcessInput
 
     ;Validate
     ;ensure we have 2 operands and an operator ;TODO implement
+    bra .Return
 
+.Error_BadChar
+    lea .ErrorMsg_BadChar,a0
+    lea Main_ErrorMsgPtr,a1
+    move.l a0,(a1)
+    jsr Set_False
+    bra .Return
+
+.Error_OneDec
+    lea .ErrorMsg_OneDec,a0
+    lea Main_ErrorMsgPtr,a1
+    move.l a0,(a1)
+    jsr Set_False
+    bra .Return
+
+.Error_OneOp
+    lea .ErrorMsg_OneOp,a0
+    lea Main_ErrorMsgPtr,a1
+    move.l a0,(a1)
+    jsr Set_False
+    bra .Return
+
+.Return
     rts
 
 ;--- Local Subroutines --------------------
@@ -301,7 +332,7 @@ ProcessInput
     cmp.l #.PrecisionDefault,d3 ;If Whole
     bne .ConvertFract           ;Else Fractional
     
-;ConvertWhole
+    ;ConvertWhole
     jsr .ProcessNegatives
     rts
 
@@ -332,27 +363,15 @@ ProcessInput
     bra .ProcessFractWhile      ;Loop
 ;------
 
-;--- Errors -------------------------------
-
-.Error_BadChar
-    ;TODO lea error msg
-    jsr Set_False
-    rts
-
-.Error_OneOp
-    ;TODO lea error msg
-    jsr Set_False
-    rts
-
-.Error_OneDec
-    ;TODO lea error msg
-    jsr Set_False
-    rts
-
 ;=== Data ===
 .PrecisionDefault equ $FFFFFFFF
 
 .Operators dc.b '+-*/',0
+
+.ErrorMsg_BadChar dc.b 'Invalid operation: Invalid character',0
+.ErrorMsg_OneDec dc.b 'Invalid operation: Only one decimal point per operand',0
+.ErrorMsg_OneOp dc.b 'Invalid operation: Only one operand allowed',0
+
     ORG (*+3)&-4 ;Force Long Word alignment
     
 ;=== Process Input ====================
@@ -397,13 +416,15 @@ PerformOperation
     ;Load Left Operand
     move.l d5,d1
     add.l d6,d1
-    bra .Result
+    jsr Set_True
+    bra .Return
 
 .Sub
     ;Load Left Operand
     move.l d5,d1
     sub.l d6,d1
-    bra .Result
+    jsr Set_True
+    bra .Return
 
 .Mul
     ;TODO convert to subroutine
@@ -454,23 +475,46 @@ PerformOperation
     mulu d3,d2      ;Multiply Parts (Adds Precision)
     add.l d2,d1     ;Add to Output
     
-    bra .Result
+    jsr Set_True
+    bra .Return
 
 .Div
-    move.l d5,d1    ;Get Left
-    move.l d6,d2    ;Get Right
+    move.l d5,d1        ;Get Left
+    move.l d6,d2        ;Get Right
 
-    jsr Math_FixDiv ;Divide (Handles Precision and Sign)
-    ;TODO handle divide by zero and overflow errors
-    move.l d3,d1    ;Move Result to Output
+    jsr Math_FixDiv     ;Divide (Handles Precision and Sign)
+    bcs .Error_DivZero
+    bvs .Error_Overflow
+    move.l d3,d1        ;Move Result to Output
 
-.Result
+    jsr Set_True
+    bra .Return
+
+.Error_DivZero
+    lea .ErrorMsg_Zero,a0
+    lea Main_ErrorMsgPtr,a1
+    move.l a0,(a1)
+    jsr Set_False
+    bra .Return
+
+.Error_Overflow
+    lea .ErrorMsg_Over,a0
+    lea Main_ErrorMsgPtr,a1
+    move.l a0,(a1)
+    jsr Set_False
+    bra .Return
+
+.Return
     ;Validate Result
 
     ;Return
     rts
 
 ;=== Data ===
+.ErrorMsg_Zero dc.b 'Invalid operation: Division by zero',0
+.ErrorMsg_Over dc.b 'Invalid operation: Overflow',0
+
+    ORG (*+3)&-4 ;Force Long Word alignment
     
 ;=== Perform Operation ================
 ;==========================================
