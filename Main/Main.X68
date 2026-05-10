@@ -25,6 +25,13 @@ Main_ErrorMsgPtr ds.l 1
 ;=== Main =================================
 ;==========================================
 MAIN
+    ;Display Banner
+    jsr DisplayBanner
+
+.Loop
+    ;Clean State
+    jsr ClearRegisters
+
     ;Get Input
     jsr GetInput
     bne .Error
@@ -40,14 +47,15 @@ MAIN
     ;Display Output
     jsr DisplayResult
 
-    ;Return
-    rts
+    ;Loop for next input
+    bra .Loop
 
 .Error
     lea Main_ErrorMsgPtr,a0
     move.l (a0),a1
     jsr Trap_DisplayString_LB
-    rts
+    jsr Trap_DisplayLinebreak
+    bra .Loop
 
 ;=== Data ===
 
@@ -56,26 +64,71 @@ MAIN
 ;==========================================
 
 ;==========================================
+;=== Display Banner ===================
+
+;Displays the banner for the program, including title, instructions, and limits
+
+;=== Subroutine ===
+DisplayBanner
+
+;=== Registers ===
+;   Internal
+;   a1 = Temp Storage
+
+;=== Logic ===
+;Display Title
+
+    ;Display Title
+    lea .Title,a1
+    jsr Trap_DisplayString
+    
+    ;Display Description
+    lea .Description,a1    
+    jsr Trap_DisplayString_LB
+    
+    ;Display Limits
+    lea .Limits,a1
+    jsr Trap_DisplayString_LB
+
+    ;Return
+    rts
+
+;=== Data ===
+.Title dc.b 'Fixed Point Calculator',CR,LF,0
+.Description 
+    dc.b 'This calculator supports addition, subtraction, multiplication, and division',CR,LF
+    dc.b 'of signed fixed point numbers with up to 5 decimal places.',CR,LF,0
+.Limits     
+    dc.b 'Operation Format: a + b',CR,LF
+    dc.b 'Supported Operators: + - * /',CR,LF
+    dc.b 'Supported Range: -32768.65535 - 32767.65535.',CR,LF,0
+
+
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;=== Display Banner ===================
+;==========================================
+
+
+;==========================================
 ;=== Get Input ========================
 
 ;Displays a prompt and gets input from the user
 
+;=== Subroutine ===
+GetInput
+
 ;=== Registers ===
 ;   Internal
+;   a0 = Temp Storage
 ;   a1 = trap
 ;   d0 = trap
 ;
 ;   Output
 ;   a1 = Input String
 
-GetInput
-    ;Display Prompt
-    lea .Prompt_1,a1
-    jsr Trap_DisplayString_LB
-    lea .Prompt_2,a1
-    jsr Trap_DisplayString_LB
-    lea .Prompt_3,a1
-    jsr Trap_DisplayString_LB
+;=== Logic ===
+;GetInput
 
     ;Capture Input
     lea .Operation,a1
@@ -101,15 +154,6 @@ GetInput
     rts
 
 ;=== Data ===
-.Prompt_1  
-    dc.b 'Input operation in format of Operand Operator Operand (eg. a + b),',CR,LF
-    dc.b 'spaces are ignored',0
-.Prompt_2
-    dc.b 'Operations are constrained to signed 16-bit fixed point values meaning',0
-.Prompt_3
-    dc.b 'Operands and Results must maintain values between -32768.65535 and 32767.65535.',CR,LF 
-    dc.b 'Operators + - * / are supported',0
-
 .Operation ds.b 25
 
 .ErrorMsg_InvalidInput dc.b 'Invalid Input - Input must be at least 3 characters long',0
@@ -124,6 +168,9 @@ GetInput
 
 ;Splits the string in a1 into d5-d7
 
+;=== Subroutine ===
+ProcessInput
+
 ;=== Registers ===
 ;   Internal
 ;   d0 = Current Byte
@@ -131,7 +178,7 @@ GetInput
 ;   d2 = Is Negative
 ;   d3 = Precision
 ;   d4 = Temp Storage
-;   a0 = Operator List
+;   a0 = Temp Storage
 ;
 ;   Input
 ;   a1 = Input String
@@ -142,8 +189,8 @@ GetInput
 ;   d7 = Operator
 
 ;=== Logic ===
+;ProcessInput
 
-ProcessInput
     ;Load Operators
     lea .Operators,a0
 
@@ -382,10 +429,15 @@ ProcessInput
 
 ;Calculates the result of the equation specified by the input values
 
+;=== Subroutine ===
+PerformOperation
+
 ;=== Registers ===
 ;   Internal
 ;   d2 = Temp Storage
 ;   d3 = Temp Storage
+;   a0 = Temp Storage
+;   a1 = Temp Storage
 ;
 ;   Input
 ;   d5 = Left Operand
@@ -395,7 +447,9 @@ ProcessInput
 ;   Output
 ;   d1 = Result
 
-PerformOperation
+;=== Logic ===
+;PerformOperation
+
     ;If Addition
     cmp.b #'+',d7
     beq .Add
@@ -524,16 +578,22 @@ PerformOperation
 
 ;Performs final transformations and displays the result to the user
 
+;=== Subroutine ===
+DisplayResult
+
 ;=== Registers ===
 ;   Internal
 ;   d0 = Trap
 ;   d2 = Temp Storage
 ;   d3 = Iterator
+;   a1 = Temp Storage
 ;
 ;   Input
 ;   d1 = Result
 
-DisplayResult
+;=== Logic ===
+;DisplayResult
+
     ;Display Sign
     tst.l d1                    ;If Positive
     bge .SkipSign               ;Skip Displaying Sign
@@ -575,18 +635,46 @@ DisplayResult
 .DisplayDecimal
     lea .FractionalBuffer,a1    ;Load Buffer Address
     jsr Trap_DisplayString
-
+    
 .Return
+    jsr Trap_DisplayLinebreak
+    jsr Trap_DisplayLinebreak
     rts
 
 ;=== Data ===
 .NegativeSign dc.b '-',0
 .DecimalPoint dc.b '.',0
-.FractionalBuffer ds.b 6 ;5 decimal places plus null terminator
+.FractionalBuffer ds.b 8 ;5 decimal places plus CR, LF, and null terminator
 
     ORG (*+3)&-4 ;Force Long Word alignment
 
 ;=== Display Result ===================
+;==========================================
+
+;==========================================
+;=== Clear Registers ==================
+
+;Clears all registers for clean state between calculations
+
+;=== Subroutine ===
+ClearRegisters
+
+;=== Logic ===
+;ClearRegisters
+
+    clr.l d0
+    clr.l d1
+    clr.l d2
+    clr.l d3
+    clr.l d4
+    clr.l d5
+    clr.l d6
+    clr.l d7
+
+    ;Return
+    rts
+
+;=== Clear Registers ==================
 ;==========================================
 
 *~Font name~Courier New~

@@ -105,13 +105,6 @@ UnitTests_ClearRegisters
     clr.l d5
     clr.l d6
     clr.l d7
-    move.l #0,a0
-    move.l #0,a2
-    move.l #0,a1
-    move.l #0,a3
-    move.l #0,a4
-    move.l #0,a5
-    move.l #0,a6
     rts
 
 ;=== Clear Registers ==================
