@@ -32,6 +32,7 @@ Test_ProcessInput_Operand_Left
     jsr Test_ProcIn_Opd_L_Neg
     jsr Test_ProcIn_Opd_L_Space
     jsr Test_ProcIn_Opd_L_Dec
+    jsr Test_ProcIn_Opd_L_NDec
     rts
 
 ;=== Variants ===
@@ -120,6 +121,27 @@ Test_ProcIn_Opd_L_Dec
 ;--- Decimal ---
 ;---------------
 
+;------------------------
+;--- Negative Decimal ---
+
+Test_ProcIn_Opd_L_NDec
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Expected,a2
+    lea .Name,a3
+    jsr Test_ProcIn_Opd_Left_Base
+    rts
+
+;--- Data ---
+
+.Expected   dc.l $FFF3A8F6 ;Two's Complement of 12.34
+.Input      dc.b '-12.34 + 5678',0,0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_L_NDec',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Negative Decimal ---
+;------------------------
+
 ;------------
 ;--- Base ---
 
@@ -163,6 +185,7 @@ Test_ProcessInput_Operand_Right
     jsr Test_ProcIn_Opd_R_Neg
     jsr Test_ProcIn_Opd_R_Space
     jsr Test_ProcIn_Opd_R_Dec
+    jsr Test_ProcIn_Opd_R_NDec
     rts
 
 ;=== Variants ===
@@ -250,6 +273,27 @@ Test_ProcIn_Opd_R_Dec
 
 ;--- Decimal ---
 ;---------------
+
+;------------------------
+;--- Negative Decimal ---
+
+Test_ProcIn_Opd_R_NDec
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Expected,a2
+    lea .Name,a3
+    jsr Test_ProcIn_Opd_Right_Base
+    rts
+
+;--- Data ---
+
+.Expected   dc.l $FFC73852 ;Two's Complement of 56.78
+.Input      dc.b '1234 + -56.78',0,0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_R_NDec',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Negative Decimal ---
+;------------------------
 
 ;------------
 ;--- Base ---

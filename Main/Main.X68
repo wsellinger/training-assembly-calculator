@@ -177,7 +177,7 @@ ProcessInput
 ;   d1 = Current Num
 ;   d2 = Is Negative
 ;   d3 = Precision
-;   d4 = Temp Storage
+;   d4 = Process Negative
 ;   a0 = Temp Storage
 ;
 ;   Input
@@ -272,16 +272,20 @@ ProcessInput
     ;ensure correct value size
     
     ;Store Operand
+    move.b #1,d4 ;Set to Process Negative for Left Operand
     jsr .StoreLeftOp
 
     bra .LoopOperation
 
 .IsEnd
     ;Store Operand
+    move.b #1,d4 ;Set to Process Negative for Right Operand
     jsr .StoreRightOp
 
     ;Validate
     ;ensure we have 2 operands and an operator ;TODO implement
+    
+    jsr Set_True
     bra .Return
 
 .Error_BadChar
@@ -322,9 +326,16 @@ ProcessInput
 
 ;--- Check Negative
 .CheckNegative
-    cmp.b #'-',(a1)
-    bne .NotNegative
-    move.b #1,d2                ;Set isNegative
+    ;Ignore Leading Spaces
+    cmp.b #' ',(a1)             ;If Not Leading Space
+    bne .CheckIsNeg              ;Then Check for Negative
+    add.l #1,a1                 ;Else Ignore Leading Space
+    bra .CheckNegative          ;Loop to Check Next Byte
+
+.CheckIsNeg
+    cmp.b #'-',(a1)             ;If Not Negative 
+    bne .NotNegative            ;Then Skip
+    move.b #1,d2                ;Else Set isNegative
     add.l #1,a1                 ;Advance Pointer
 .NotNegative
     rts
@@ -358,7 +369,9 @@ ProcessInput
 ;--- Store Left Operand
 .StoreLeftOp
     jsr .StoreOpConvert
-    add.l d1,d5
+    add.l d5,d1             ;Combine Integer and Fractional
+    jsr .ProcessNegative
+    move.l d1,d5            ;Save Processed Value Back to Left Operand
     clr.l d1
     rts
 ;------
@@ -366,7 +379,9 @@ ProcessInput
 ;--- Store Right Operand
 .StoreRightOp
     jsr .StoreOpConvert
-    add.l d1,d6
+    add.l d6,d1             ;Combine Integer and Fractional
+    jsr .ProcessNegative
+    move.l d1,d6            ;Save Processed Value Back to Right Operand
     clr.l d1
     rts
 ;------
@@ -377,26 +392,9 @@ ProcessInput
 
     ;Check Precision
     cmp.l #.PrecisionDefault,d3 ;If Whole
-    bne .ConvertFract           ;Else Fractional
-    
-    ;ConvertWhole
-    jsr .ProcessNegatives
-    rts
-
-.ConvertFract
+    beq .SkipFract              ;Then Skip Fractional Conversion
     jsr .ProcessFract
-    rts
-;------
-
-;--- Process Negatives
-.ProcessNegatives
-    cmp.b #1,d2                 ;If Negative
-    beq .ConvertToNeg
-    rts
-.ConvertToNeg
-    sub.l d1,d4
-    move.l d4,d1
-    clr.l d4
+.SkipFract
     rts
 ;------
 
@@ -409,6 +407,17 @@ ProcessInput
     jsr Math_DivShift_10        ;Divide D1 by 10 using shifting math to allow operations above word boundary
     bra .ProcessFractWhile      ;Loop
 ;------
+
+;--- Process Negative
+.ProcessNegative
+    tst.b d4            ;If Not Process Negative
+    beq .ProcNegReturn  ;Then Return
+    tst.b d2            ;If Not Negative
+    beq .ProcNegReturn  ;Then Return
+    neg.l d1            ;Else Convert to Negative
+.ProcNegReturn
+    clr.b d4            ;Clear Process Negative
+    rts
 
 ;=== Data ===
 .PrecisionDefault equ $FFFFFFFF
