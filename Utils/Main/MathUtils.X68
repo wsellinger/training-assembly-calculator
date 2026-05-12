@@ -296,8 +296,10 @@ Math_ApplySign
 ;=== Logic ===
 ;Math_ApplySign
 
-    tst.l d0
-    beq .Positive
+    tst.l d0          ;If Positive
+    beq .Positive     ;Then Skip Negation
+    tst.l d3          ;If $80000000 (edge case)
+    bmi .Positive     ;Then Skip Negation (to prevent false overflow)
     neg.l d3
 .Positive
     rts
@@ -385,10 +387,19 @@ Math_FixMul
     mulu d2,d1              ;Multiply Parts (Adds Precision)
     add.l d1,d3             ;Add to Output
 
+    ;Check Overflow
+    jsr .CheckOverflow
+    beq .ThrowOverflow
+
     ;Apply Sign
     jsr Math_ApplySign
 
-    jsr Set_True
+    ;Return
+    bra .Return
+
+.ThrowOverflow
+    move.l #0,d3            ;Return 0 on overflow
+    or #CCR_OverFlow,ccr    ;Set Overflow Flag
 
 .Return
     ;Restore Registers
@@ -396,6 +407,26 @@ Math_FixMul
 
     ;Return
     rts
+
+;--- Local Subroutines --------------------
+
+;--- Check Overflow
+.CheckOverflow
+    tst.l d0                ;If Negative
+    bne .CheckNegOverflow   ;Then Check Negative Overflow
+    tst.l d3                ;If Positive
+    bmi .ReturnOverflow     ;Then Check Positive Overflow
+    bra .ReturnNoOverflow   ;Else No Overflow
+.CheckNegOverflow
+    cmp.l #$80000000,d3     ;If <= $80000000
+    bhi .ReturnOverflow     ;Then Overflow
+.ReturnNoOverflow
+    jsr Set_False           ;Else No Overflow
+    rts
+.ReturnOverflow
+    jsr Set_True
+    rts
+;------
 
 ;=== Fixed Point Multiplication =======
 ;==========================================
@@ -453,7 +484,6 @@ Math_FixDiv
     jsr Math_ApplySign
 
     ;Return
-    jsr Set_True        ;Set Divide Performed Flag
     bra .Return
 
 .ThrowDivideByZero
@@ -503,11 +533,11 @@ Math_FixDiv
 .CheckOverflow
     swap d3             ;Get overflow bits
     tst.w d3            ;If exceeds word length (overflow bits non-zero )
-    bne .OverFlowSkip   ;Return Overflow
+    bne .ReturnOverflow ;Return Overflow
     swap d3             ;Else clean up
-    jsr Set_False
+    jsr Set_False       ;   No Overflow
     rts
-.OverFlowSkip
+.ReturnOverflow
     jsr Set_True
     rts
 ;------

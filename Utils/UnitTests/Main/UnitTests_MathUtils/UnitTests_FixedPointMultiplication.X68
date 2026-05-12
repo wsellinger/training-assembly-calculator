@@ -29,6 +29,9 @@ Test_Math_FixMul
     jsr Test_Math_FixMul_NegMix
     jsr Test_Math_FixMul_MixNeg
     jsr Test_Math_FixMul_NNMix
+    jsr Test_Math_FixMul_Over
+    jsr Test_Math_FixMul_NegOver
+    jsr Test_Math_FixMul_NotOver
     rts
 
 ;=== Variants ===
@@ -456,6 +459,75 @@ Test_Math_FixMul_NNMix
 ;--- Base Tests ---------------------------
 
 ;------------------------------------------
+;--- Math_FixMul Over -----------------
+;   32767.0 x 2.0 = 65534.0 � overflows
+
+Test_Math_FixMul_Over
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_Math_FixMul_VBase
+    rts
+
+.Input
+    dc.l $7FFF0000     ;Left    32767.0
+    dc.l $00020000     ;Right   2.0
+
+.Name
+    dc.b 'UnitTests_MathUtils:Test_Math_FixMul_Over',0
+    ORG (*+3)&-4
+
+;--- Math_FixMul Over -----------------
+;------------------------------------------
+
+;------------------------------------------
+;--- Math_FixMul NegOver --------------
+;   -32768.0 x 2.0 = -65536.0 � overflows
+
+Test_Math_FixMul_NegOver
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_Math_FixMul_VBase
+    rts
+
+.Input
+    dc.l $00C80000     ;Left    -200.0
+    dc.l $00C80000     ;Right    200.0
+
+.Name
+    dc.b 'UnitTests_MathUtils:Test_Math_FixMul_NegOver',0
+    ORG (*+3)&-4
+
+;--- Math_FixMul NegOver --------------
+;------------------------------------------
+
+;------------------------------------------
+;--- Math_FixMul NotOver --------------
+;   181.0 x 181.0 = 32761.0 � just within range
+
+Test_Math_FixMul_NotOver
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_Math_FixMul_Base
+    rts
+
+.Input
+    dc.l $00B50000     ;Left    181.0
+    dc.l $00B50000     ;Right   181.0
+    dc.l $7FF90000     ;Result  32761.0
+
+.Name
+    dc.b 'UnitTests_MathUtils:Test_Math_FixMul_NotOver',0
+    ORG (*+3)&-4
+
+;--- Math_FixMul NotOver --------------
+;------------------------------------------
+
+;--- Base Tests ---------------------------
+
+;------------------------------------------
 ;--- Math_FixMul Base -----------------
 
 ;--- Registers ---
@@ -482,6 +554,38 @@ Test_Math_FixMul_Base
     rts
 
 ;--- Math_FixMul Base -----------------
+;------------------------------------------
+
+;------------------------------------------
+;--- Math_FixMul Overflow Base --------
+
+;--- Registers ---
+;   Input
+;   a5 = Name of test for logging
+;   a6 = Pointer to 2 consecutive longs: Left, Right
+;   Pass condition: V flag set on return (overflow detected)
+
+Test_Math_FixMul_VBase
+    ;Arrange
+    move.l (a6)+,d1    ;Left Factor
+    move.l (a6)+,d2    ;Right Factor
+
+    ;Act
+    jsr Math_FixMul
+
+    ;Assert
+    bvs .Pass          ;V flag set = overflow detected
+    bra .Fail
+
+.Pass
+    rts                ;Success
+
+.Fail
+    move.l a5,a0
+    jsr UnitTests__LogFailure
+    rts
+
+;--- Math_FixMul Overflow Base --------
 ;------------------------------------------
 
 ;=== Math_FixMul ======================

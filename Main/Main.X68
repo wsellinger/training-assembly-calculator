@@ -554,7 +554,7 @@ PerformOperation
     move.l d6,d2        ;Get Right
 
     jsr Math_FixMul
-    bne .Error_Overflow
+    bvs .Error_Overflow
     move.l d3,d1        ;Move Result to Output
 
     bra .Return
