@@ -76,7 +76,7 @@ DisplayBanner
 ;   a1 = Temp Storage
 
 ;=== Logic ===
-;Display Title
+;Display Banner
 
     ;Display Title
     lea .Title,a1
@@ -101,8 +101,8 @@ DisplayBanner
 .Limits     
     dc.b 'Operation Format: a + b',CR,LF
     dc.b 'Supported Operators: + - * /',CR,LF
-    dc.b 'Supported Range: -32768.65535 - 32767.65535.',CR,LF,0
-
+    dc.b 'Supported Range: -32768 <= Value < 32768.',CR,LF
+    dc.b 'Supported Precision: Up to 4 decimal places.',CR,LF,0
 
     ORG (*+3)&-4 ;Force Long Word alignment
 
@@ -233,13 +233,12 @@ ProcessInput
     sub.b #48,d0
 
     ;Shift Destination Up 1 Decimal Place
-    muls #10,d1 ;TODO optimize to use bit shifting? (<<3 + <<1) test to see if it's actually faster
-
-    ;If Overflow ;TODO implement
-        ;Error too many digits
+    mulu #10,d1
     
     ;Add to Destination
-    add.w d0,d1 
+    add.l d0,d1
+    jsr .IsOver
+    beq .Error_Overflow
 
     jsr .UpdatePrecision
 
@@ -274,13 +273,15 @@ ProcessInput
     ;Store Operand
     move.b #1,d4 ;Set to Process Negative for Left Operand
     jsr .StoreLeftOp
-
+    bne .Error_Overflow
+    
     bra .LoopOperation
 
 .IsEnd
     ;Store Operand
     move.b #1,d4 ;Set to Process Negative for Right Operand
     jsr .StoreRightOp
+    bne .Error_Overflow
 
     ;Validate
     ;ensure we have 2 operands and an operator ;TODO implement
@@ -309,6 +310,13 @@ ProcessInput
     jsr Set_False
     bra .Return
 
+.Error_Overflow
+    lea .ErrorMsg_Over,a0
+    lea Main_ErrorMsgPtr,a1
+    move.l a0,(a1)
+    jsr Set_False
+    bra .Return
+
 .Return
     rts
 
@@ -319,7 +327,7 @@ ProcessInput
     clr.l d0
     clr.l d1
     clr.l d2
-    move.l #.PrecisionDefault,d3 ;use max as default as 0 is a valid precision 
+    move.l #.PrecisionDefault,d3 ;use max as default as 0 is a valid precision
     clr.l d4
     rts
 ;------
@@ -328,7 +336,7 @@ ProcessInput
 .CheckNegative
     ;Ignore Leading Spaces
     cmp.b #' ',(a1)             ;If Not Leading Space
-    bne .CheckIsNeg              ;Then Check for Negative
+    bne .CheckIsNeg             ;Then Check for Negative
     add.l #1,a1                 ;Else Ignore Leading Space
     bra .CheckNegative          ;Loop to Check Next Byte
 
@@ -338,6 +346,36 @@ ProcessInput
     move.b #1,d2                ;Else Set isNegative
     add.l #1,a1                 ;Advance Pointer
 .NotNegative
+    rts
+;------
+
+;--- Is Overflow
+.IsOver
+    cmp.l #.PrecisionDefault,d3 ;If not Integer
+    bne .CheckFractV            ;Then Fractional
+
+    ;Check Integer Overflow
+    ;Check Signed Limit
+    cmp.l #$00007FFF,d1         ;If Signed Limit not Exceeded
+    ble .IsOver_False           ;Then Not Overflow
+
+    ;Check Edge Case
+    cmp.l #$00008000,d1         ;If not -32768
+    bne .IsOver_True            ;Then Overflow
+    cmp.b #1,d2                 ;If not Negative
+    bne .IsOver_True            ;Then Overflow
+    bra .IsOver_False           ;Else No Overflow
+
+    ;Check Fractional Overflow
+.CheckFractV
+    cmp.l #$0000270F,d1         ;If Fractional Part Exceeds Limit (0.9999, or 4 decimal places)
+    bhi .IsOver_True            ;Then Overflow
+
+.IsOver_False
+    jsr Set_False
+    rts
+.IsOver_True
+    jsr Set_True
     rts
 ;------
 
@@ -371,8 +409,13 @@ ProcessInput
     jsr .StoreOpConvert
     add.l d5,d1             ;Combine Integer and Fractional
     jsr .ProcessNegative
+    bne .StoreLError
     move.l d1,d5            ;Save Processed Value Back to Left Operand
     clr.l d1
+    jsr Set_True
+    rts
+.StoreLError
+    jsr Set_False
     rts
 ;------
 
@@ -381,8 +424,13 @@ ProcessInput
     jsr .StoreOpConvert
     add.l d6,d1             ;Combine Integer and Fractional
     jsr .ProcessNegative
+    bne .StoreRError
     move.l d1,d6            ;Save Processed Value Back to Right Operand
     clr.l d1
+    jsr Set_True
+    rts
+.StoreRError
+    jsr Set_False
     rts
 ;------
 
@@ -414,9 +462,20 @@ ProcessInput
     beq .ProcNegReturn  ;Then Return
     tst.b d2            ;If Not Negative
     beq .ProcNegReturn  ;Then Return
+    cmp.l #$80000000,d1 ;If Value is already Min Negative
+    bhi .ProcNegError   ;Then Error, overflow
     neg.l d1            ;Else Convert to Negative
+
 .ProcNegReturn
     clr.b d4            ;Clear Process Negative
+    jsr Set_True
+    rts
+
+.ProcNegError
+    lea .ErrorMsg_Over,a0
+    lea Main_ErrorMsgPtr,a1
+    move.l a0,(a1)
+    jsr Set_False
     rts
 
 ;=== Data ===
@@ -427,6 +486,7 @@ ProcessInput
 .ErrorMsg_BadChar dc.b 'Invalid operation: Invalid character',0
 .ErrorMsg_OneDec dc.b 'Invalid operation: Only one decimal point per operand',0
 .ErrorMsg_OneOp dc.b 'Invalid operation: Only one operand allowed',0
+.ErrorMsg_Over dc.b 'Invalid operation: Number too large',0
 
     ORG (*+3)&-4 ;Force Long Word alignment
     
@@ -619,7 +679,7 @@ DisplayResult
 
     ;Check for Fractional
     tst.w d2                    ;If No Fractional
-    beq .Return                 ;Exit
+    beq .Return                 ;ExitW
 
     ;Display Decimal Point
     lea .DecimalPoint,a1
@@ -629,7 +689,7 @@ DisplayResult
     move.w d2,d1                ;Get Fractional Part
     clr.l d2                    ;Clear Temp Storage
     lea .FractionalBuffer,a1    ;Load Buffer Address
-    move.l #4,d3                ;Set Precision (5 Decimal Places)
+    move.l #3,d3                ;Set Precision (4 Decimal Places)
 
 .LoopFractional
     jsr Math_MulShift_10_D1     ;Shift Next Fractional Digit into Integer
@@ -653,7 +713,7 @@ DisplayResult
 ;=== Data ===
 .NegativeSign dc.b '-',0
 .DecimalPoint dc.b '.',0
-.FractionalBuffer ds.b 8 ;5 decimal places plus CR, LF, and null terminator
+.FractionalBuffer ds.b 7 ;4 decimal places plus CR, LF, and null terminator
 
     ORG (*+3)&-4 ;Force Long Word alignment
 

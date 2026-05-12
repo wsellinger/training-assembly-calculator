@@ -12,6 +12,7 @@ UnitTests_ProcessInput
     jsr Test_ProcessInput_Operand_Left
     jsr Test_ProcessInput_Operand_Right
     jsr Test_ProcessInput_Operator
+    jsr Test_ProcessInput_Error
     rts
 
 ;=== Run Tests ========================
@@ -32,7 +33,8 @@ Test_ProcessInput_Operand_Left
     jsr Test_ProcIn_Opd_L_Neg
     jsr Test_ProcIn_Opd_L_Space
     jsr Test_ProcIn_Opd_L_Dec
-    jsr Test_ProcIn_Opd_L_NDec
+    jsr Test_ProcIn_Opd_L_Max
+    jsr Test_ProcIn_Opd_L_Min
     rts
 
 ;=== Variants ===
@@ -51,7 +53,7 @@ Test_ProcIn_Opd_L_Simp
 ;--- Data ---
 
 .Expected   dc.l $04D20000
-.Input      dc.b '1234+5678',0,0
+.Input      dc.b '1234+5678',0
 .Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_L_Simp',0
     ORG (*+3)&-4 ;Force Long Word alignment
 
@@ -93,7 +95,7 @@ Test_ProcIn_Opd_L_Space
 ;--- Data ---
 
 .Expected   dc.l $04D20000
-.Input      dc.b ' 1234 + 5678 ',0,0
+.Input      dc.b ' 1234 + 5678 ',0
 .Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_L_Space',0
     ORG (*+3)&-4 ;Force Long Word alignment
 
@@ -114,17 +116,19 @@ Test_ProcIn_Opd_L_Dec
 ;--- Data ---
 
 .Expected   dc.l $C570A
-.Input      dc.b '12.34 + 5678',0,0
+.Input      dc.b '12.34 + 5678',0
 .Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_L_Dec',0
     ORG (*+3)&-4 ;Force Long Word alignment
 
 ;--- Decimal ---
 ;---------------
 
-;------------------------
-;--- Negative Decimal ---
+;-----------
+;--- Max ---
 
-Test_ProcIn_Opd_L_NDec
+;Maximum positive value: 32767.65535 -> $7FFFFFFF
+
+Test_ProcIn_Opd_L_Max
     jsr UnitTests_ClearRegisters
     lea .Input,a1
     lea .Expected,a2
@@ -134,13 +138,36 @@ Test_ProcIn_Opd_L_NDec
 
 ;--- Data ---
 
-.Expected   dc.l $FFF3A8F6 ;Two's Complement of 12.34
-.Input      dc.b '-12.34 + 5678',0,0
-.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_L_NDec',0
+.Expected   dc.l $7FFFFFF9
+.Input      dc.b '32767.9999+0',0 ;Max value with 4 decimal places (32767.9999) -> $7FFFFFF9
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_L_Max',0
     ORG (*+3)&-4 ;Force Long Word alignment
 
-;--- Negative Decimal ---
-;------------------------
+;--- Max ---
+;-----------
+
+;-----------
+;--- Min ---
+
+;Minimum negative value: -32768 -> $80000000
+
+Test_ProcIn_Opd_L_Min
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Expected,a2
+    lea .Name,a3
+    jsr Test_ProcIn_Opd_Left_Base
+    rts
+
+;--- Data ---
+
+.Expected   dc.l $80000000
+.Input      dc.b '-32768+0',0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_L_Min',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Min ---
+;-----------
 
 ;------------
 ;--- Base ---
@@ -185,7 +212,8 @@ Test_ProcessInput_Operand_Right
     jsr Test_ProcIn_Opd_R_Neg
     jsr Test_ProcIn_Opd_R_Space
     jsr Test_ProcIn_Opd_R_Dec
-    jsr Test_ProcIn_Opd_R_NDec
+    jsr Test_ProcIn_Opd_R_Max
+    jsr Test_ProcIn_Opd_R_Min
     rts
 
 ;=== Variants ===
@@ -267,17 +295,19 @@ Test_ProcIn_Opd_R_Dec
 ;--- Data ---
 
 .Expected   dc.l $38C7AE
-.Input      dc.b '1234 + 56.78',0,0
+.Input      dc.b '1234 + 56.78',0
 .Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_R_Dec',0
     ORG (*+3)&-4 ;Force Long Word alignment
 
 ;--- Decimal ---
 ;---------------
 
-;------------------------
-;--- Negative Decimal ---
+;-----------
+;--- Max ---
 
-Test_ProcIn_Opd_R_NDec
+;Maximum positive value: 32767.65535 -> $7FFFFFFF
+
+Test_ProcIn_Opd_R_Max
     jsr UnitTests_ClearRegisters
     lea .Input,a1
     lea .Expected,a2
@@ -287,13 +317,36 @@ Test_ProcIn_Opd_R_NDec
 
 ;--- Data ---
 
-.Expected   dc.l $FFC73852 ;Two's Complement of 56.78
-.Input      dc.b '1234 + -56.78',0,0
-.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_R_NDec',0
+.Expected   dc.l $7FFFFFF9
+.Input      dc.b '0+32767.9999',0 ;Max value with 4 decimal places (32767.9999) -> $7FFFFFF9
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_R_Max',0
     ORG (*+3)&-4 ;Force Long Word alignment
 
-;--- Negative Decimal ---
-;------------------------
+;--- Max ---
+;-----------
+
+;-----------
+;--- Min ---
+
+;Minimum negative value: -32768 -> $80000000
+
+Test_ProcIn_Opd_R_Min
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Expected,a2
+    lea .Name,a3
+    jsr Test_ProcIn_Opd_Right_Base
+    rts
+
+;--- Data ---
+
+.Expected   dc.l $80000000
+.Input      dc.b '0+-32768',0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Opd_R_Min',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Min ---
+;-----------
 
 ;------------
 ;--- Base ---
@@ -454,6 +507,179 @@ Test_ProcIn_Operation_Base
 ;------------
 
 ;--- ProcessInput Operator ------------
+;------------------------------------------
+
+;------------------------------------------
+;--- ProcessInput Error ---------------
+
+;Given invalid input, verifies Set_False is returned
+
+;=== Main Test ===
+
+Test_ProcessInput_Error
+    jsr Test_ProcIn_Err_BadChar
+    jsr Test_ProcIn_Err_OneDec
+    jsr Test_ProcIn_Err_OneOp
+    jsr Test_ProcIn_Err_OvrInt
+    jsr Test_ProcIn_Err_OvrFrac
+    jsr Test_ProcIn_Err_OvrNeg
+    rts
+
+;=== Variants ===
+
+;--------------------
+;--- Bad Char -------
+
+;Invalid character in operand
+
+Test_ProcIn_Err_BadChar
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Name,a3
+    jsr Test_ProcIn_Err_Base
+    rts
+
+;--- Data ---
+
+.Input      dc.b '1a2+3',0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Err_BadChar',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Bad Char -------
+;--------------------
+
+;--------------------
+;--- One Decimal ----
+
+;Two decimal points in one operand
+
+Test_ProcIn_Err_OneDec
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Name,a3
+    jsr Test_ProcIn_Err_Base
+    rts
+
+;--- Data ---
+
+.Input      dc.b '1.2.3+4',0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Err_OneDec',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- One Decimal ----
+;--------------------
+
+;--------------------
+;--- One Operator ---
+
+;Two operators in expression
+
+Test_ProcIn_Err_OneOp
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Name,a3
+    jsr Test_ProcIn_Err_Base
+    rts
+
+;--- Data ---
+
+.Input      dc.b '1++2',0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Err_OneOp',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- One Operator ---
+;--------------------
+
+;--------------------
+;--- Ovr Int --------
+
+;Positive integer exceeds max (32768 > 32767)
+
+Test_ProcIn_Err_OvrInt
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Name,a3
+    jsr Test_ProcIn_Err_Base
+    rts
+
+;--- Data ---
+
+.Input      dc.b '32768+0',0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Err_OvrInt',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Ovr Int --------
+;--------------------
+
+;--------------------
+;--- Ovr Frac -------
+
+;Fractional digit string exceeds $FFFF (99999 > 65535)
+
+Test_ProcIn_Err_OvrFrac
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Name,a3
+    jsr Test_ProcIn_Err_Base
+    rts
+
+;--- Data ---
+
+.Input      dc.b '1.100000+0',0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Err_OvrFrac',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Ovr Frac -------
+;--------------------
+
+;--------------------
+;--- Ovr Neg --------
+
+;-32768 with fractional exceeds min (-32768.65535 combined > $80000000)
+
+Test_ProcIn_Err_OvrNeg
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Name,a3
+    jsr Test_ProcIn_Err_Base
+    rts
+
+;--- Data ---
+
+.Input      dc.b '-32768.00002+0',0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Err_OvrNeg',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Ovr Neg --------
+;--------------------
+
+;--- ProcessInput Error ---------------
+;------------------------------------------
+
+;------------------------------------------
+;--- ProcessInput Error Base ----------
+
+;Verifies ProcessInput returns Set_False (Z=0) for error cases
+;
+;--- Registers ---
+;   Input
+;   a1 = Input string
+;   a3 = Name of test for logging
+
+Test_ProcIn_Err_Base
+    ;Act
+    jsr ProcessInput
+
+    ;Assert - expect Set_False (Z=0), fail if Set_True (Z=1)
+    beq .Fail
+    rts
+
+.Fail
+    move.l a3,a0
+    jsr UnitTests__LogFailure
+    rts
+
+;--- ProcessInput Error Base ----------
 ;------------------------------------------
 
 ;=== ProcessInput =====================

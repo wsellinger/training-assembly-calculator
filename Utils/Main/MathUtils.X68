@@ -103,32 +103,32 @@ Math_DivShift_10
     ;Mult by .8
     ;q =  n >> 1
     move.l d1,d2
-    asr.l #1,d2
+    lsr.l #1,d2
     move.l d2,d3    ;d/2 = .5d
     
     ;q += n >> 2
     move.l d1,d2
-    asr.l #2,d2
+    lsr.l #2,d2
     add.l d2,d3     ;3d/4 = .75d
     
     ;q += q >> 4
     move.l d3,d2
-    asr.l #4,d2
+    lsr.l #4,d2
     add.l d2,d3     ;51d/64 = .796975d
     
     ;q += q >> 8
     move.l d3,d2
-    asr.l #8,d2
+    lsr.l #8,d2
     add.l d2,d3     ;13107d/16384 = .799987...d
     
     ;q += q >> 16
     move.l d3,d2
-    asr.l #8,d2
-    asr.l #8,d2
+    lsr.l #8,d2
+    lsr.l #8,d2
     add.l d2,d3     ;858993458d/1073741824 = ~.8d
 
     ;Div by 8
-    asr.l #3,d3     ;q >> 3
+    lsr.l #3,d3     ;q >> 3
 
     ;Get Remainder
     move.l d3,d2    ;q

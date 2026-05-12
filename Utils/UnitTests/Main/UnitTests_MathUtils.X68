@@ -354,8 +354,8 @@ Test_Math_DShift_10_Neg
 ;=== Data ===
 
 .Input
-    dc.l $FFFFFFF6  ;Input      ;-10
-    dc.l $FFFFFFFF  ;Expected   ;-1     
+    dc.l $FFFFFFF6  ;Input      ;4294967286 (unsigned)
+    dc.l $19999998  ;Expected   ;429496728
 
 .Name
     dc.b 'UnitTests_MathUtils:Test_Math_DShift_10_Neg',0
@@ -377,8 +377,8 @@ Test_Math_DShift_10_Min
 ;--- Data ---
 
 .Input
-    dc.l $80000000  ;Input      ;-2147483648  
-    dc.l $F3333334  ;Expected   ;-214748364   
+    dc.l $80000000  ;Input      ;2147483648 (unsigned)
+    dc.l $0CCCCCCC  ;Expected   ;214748364
 
 .Name
     dc.b 'UnitTests_MathUtils:Test_Math_DShift_10_Min',0
