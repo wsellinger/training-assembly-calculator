@@ -13,6 +13,7 @@ UnitTests_PerformOperation
     jsr Test_PerformOperation_Sub
     jsr Test_PerformOperation_Mul
     jsr Test_PerformOperation_Div
+    jsr Test_PerformOperation_Ovr
     rts
 
 ;=== Run Tests ========================
@@ -33,6 +34,9 @@ Test_PerformOperation_Add
     jsr Test_PerfOp_Add_Max
     jsr Test_PerfOp_Add_Min
     jsr Test_PerfOp_Add_Dec
+    jsr Test_PerfOp_Add_NegNeg
+    jsr Test_PerfOp_Add_Cross
+    jsr Test_PerfOp_Add_Zero
     rts
 
 ;=== Variants ===
@@ -135,6 +139,81 @@ Test_PerfOp_Add_Dec
 ;--- Decimal ---
 ;---------------
 
+;--------------
+;--- NegNeg ---
+
+Test_PerfOp_Add_NegNeg
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $FFFE0000  ;-2.0
+    dc.l $FFFD0000  ;-3.0
+    dc.b 0,0,0,'+'
+    dc.l $FFFB0000  ;-5.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Add_NegNeg',0
+    ORG (*+3)&-4
+
+;--- NegNeg ---
+;--------------
+
+;-----------------
+;--- CrossZero ---
+
+Test_PerfOp_Add_Cross
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $FFFF0000  ;-1.0
+    dc.l $00030000  ; 3.0
+    dc.b 0,0,0,'+'
+    dc.l $00020000  ; 2.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Add_Cross',0
+    ORG (*+3)&-4
+
+;--- CrossZero ---
+;-----------------
+
+;------------
+;--- Zero ---
+
+Test_PerfOp_Add_Zero
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $00000000  ; 0.0
+    dc.l $00050000  ; 5.0
+    dc.b 0,0,0,'+'
+    dc.l $00050000  ; 5.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Add_Zero',0
+    ORG (*+3)&-4
+
+;--- Zero ---
+;-------------
+
 ;--- PerformOperation Add -------------
 ;------------------------------------------
 
@@ -150,6 +229,9 @@ Test_PerformOperation_Sub
     jsr Test_PerfOp_Sub_Max
     jsr Test_PerfOp_Sub_Min
     jsr Test_PerfOp_Sub_Dec
+    jsr Test_PerfOp_Sub_NegRes
+    jsr Test_PerfOp_Sub_NegNeg
+    jsr Test_PerfOp_Sub_Zero
     rts
 
 ;=== Variants ===
@@ -163,6 +245,8 @@ Test_PerfOp_Sub_Simple
     lea .Name,a5
     jsr Test_PerformOperation_Base
     rts
+
+;--- Data ---
 
 .Input
     dc.l $00030000
@@ -252,6 +336,81 @@ Test_PerfOp_Sub_Dec
 ;--- Decimal ---
 ;---------------
 
+;-----------------
+;--- NegResult ---
+
+Test_PerfOp_Sub_NegRes
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $00010000  ; 1.0
+    dc.l $00030000  ; 3.0
+    dc.b 0,0,0,'-'
+    dc.l $FFFE0000  ;-2.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Sub_NegRes',0
+    ORG (*+3)&-4
+
+;--- NegResult ---
+;-----------------
+
+;--------------
+;--- NegNeg ---
+
+Test_PerfOp_Sub_NegNeg
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $FFFE0000  ;-2.0
+    dc.l $FFFD0000  ;-3.0
+    dc.b 0,0,0,'-'
+    dc.l $00010000  ; 1.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Sub_NegNeg',0
+    ORG (*+3)&-4
+
+;--- NegNeg ---
+;--------------
+
+;------------
+;--- Zero ---
+
+Test_PerfOp_Sub_Zero
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $00050000  ; 5.0
+    dc.l $00050000  ; 5.0
+    dc.b 0,0,0,'-'
+    dc.l $00000000  ; 0.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Sub_Zero',0
+    ORG (*+3)&-4
+
+;--- Zero ---
+;------------
+
 ;--- PerformOperation Subtract --------
 ;------------------------------------------
 
@@ -267,8 +426,10 @@ Test_PerformOperation_Mul
     jsr Test_PerfOp_Mul_Max
     jsr Test_PerfOp_Mul_Min
     jsr Test_PerfOp_Mul_Dec
-    ;TODO add more tests for mul, especially for edge cases like multiplying by 0, multiplying by 1, multiplying two negative numbers, etc
-    
+    jsr Test_PerfOp_Mul_Zero
+    jsr Test_PerfOp_Mul_One
+    jsr Test_PerfOp_Mul_NegPos
+    jsr Test_PerfOp_Mul_NegNeg
     rts
 
 ;=== Variants ===
@@ -282,6 +443,8 @@ Test_PerfOp_Mul_Simple
     lea .Name,a5
     jsr Test_PerformOperation_Base
     rts
+
+;--- Data ---
 
 .Input
     dc.l $00020000
@@ -371,6 +534,106 @@ Test_PerfOp_Mul_Dec
 ;--- Decimal ---
 ;---------------
 
+;------------
+;--- Zero ---
+
+Test_PerfOp_Mul_Zero
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $00050000  ; 5.0
+    dc.l $00000000  ; 0.0
+    dc.b 0,0,0,'*'
+    dc.l $00000000  ; 0.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Mul_Zero',0
+    ORG (*+3)&-4
+
+;--- Zero ---
+;------------
+
+;-----------
+;--- One ---
+
+Test_PerfOp_Mul_One
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $00050000  ; 5.0
+    dc.l $00010000  ; 1.0
+    dc.b 0,0,0,'*'
+    dc.l $00050000  ; 5.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Mul_One',0
+    ORG (*+3)&-4
+
+;--- One ---
+;-----------
+
+;--------------
+;--- NegPos ---
+
+Test_PerfOp_Mul_NegPos
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $FFFD0000  ;-3.0
+    dc.l $00020000  ; 2.0
+    dc.b 0,0,0,'*'
+    dc.l $FFFA0000  ;-6.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Mul_NegPos',0
+    ORG (*+3)&-4
+
+;--- NegPos ---
+;--------------
+
+;--------------
+;--- NegNeg ---
+
+Test_PerfOp_Mul_NegNeg
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $FFFD0000  ;-3.0
+    dc.l $FFFE0000  ;-2.0
+    dc.b 0,0,0,'*'
+    dc.l $00060000  ; 6.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Mul_NegNeg',0
+    ORG (*+3)&-4
+
+;--- NegNeg ---
+;--------------
+
 ;--- PerformOperation Multiply --------
 ;------------------------------------------
 
@@ -384,6 +647,12 @@ Test_PerfOp_Mul_Dec
 Test_PerformOperation_Div
     jsr Test_PerfOp_Div_Int
     jsr Test_PerfOp_Div_Fix
+    jsr Test_PerfOp_Div_NegPos
+    jsr Test_PerfOp_Div_NegNeg
+    jsr Test_PerfOp_Div_ZeroN
+    jsr Test_PerfOp_Div_Max
+    jsr Test_PerfOp_Div_Min
+    jsr Test_PerfOp_Div_Frac
     rts
 
 ;=== Variants ===
@@ -409,7 +678,7 @@ Test_PerfOp_Div_Int
     ORG (*+3)&-4 ;Force Long Word alignment
 
 ;--- Int ---
-;--------------
+;-----------
 
 ;-----------
 ;--- Fix ---
@@ -436,7 +705,277 @@ Test_PerfOp_Div_Fix
 ;--- Fix ---
 ;-----------
 
+
+;--------------
+;--- NegPos ---
+
+Test_PerfOp_Div_NegPos
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $FFFA0000  ;-6.0
+    dc.l $00030000  ; 3.0
+    dc.b 0,0,0,'/'
+    dc.l $FFFE0000  ;-2.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_NegPos',0
+    ORG (*+3)&-4
+
+;--- NegPos ---
+;--------------
+
+;--------------
+;--- NegNeg ---
+
+Test_PerfOp_Div_NegNeg
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $FFFA0000  ;-6.0
+    dc.l $FFFD0000  ;-3.0
+    dc.b 0,0,0,'/'
+    dc.l $00020000  ; 2.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_NegNeg',0
+    ORG (*+3)&-4
+
+;--- NegNeg ---
+;--------------
+
+;----------------------
+;--- Zero Numerator ---
+
+Test_PerfOp_Div_ZeroN
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $00000000  ; 0.0
+    dc.l $00050000  ; 5.0
+    dc.b 0,0,0,'/'
+    dc.l $00000000  ; 0.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_ZeroN',0
+    ORG (*+3)&-4
+
+;--- Zero Numerator ---
+;----------------------
+
+;-----------
+;--- Max ---
+
+Test_PerfOp_Div_Max
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $7FFF0000  ;32767.0
+    dc.l $00010000  ; 1.0
+    dc.b 0,0,0,'/'
+    dc.l $7FFF0000  ;32767.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_Max',0
+    ORG (*+3)&-4
+
+;--- Max ---
+;-----------
+
+;-----------
+;--- Min ---
+
+Test_PerfOp_Div_Min
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $80000000  ;-32768.0
+    dc.l $00010000  ; 1.0
+    dc.b 0,0,0,'/'
+    dc.l $80000000  ;-32768.0     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_Min',0
+    ORG (*+3)&-4
+
+;--- Min ---
+;-----------
+
+;-----------
+;--- Frac ---
+
+Test_PerfOp_Div_Frac
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerformOperation_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $00010000  ; 1.0
+    dc.l $00030000  ; 3.0
+    dc.b 0,0,0,'/'
+    dc.l $00005555  ;~0.33333     ;Expected
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_Frac',0
+    ORG (*+3)&-4
+
+;--- Frac ---
+;-----------
+
 ;--- PerformOperation Divide ----------
+;------------------------------------------
+
+;------------------------------------------
+;--- PerformOperation Overflow --------
+
+;Given an operation that causes an error, verifies Set_False is returned
+
+;=== Main Test ===
+
+Test_PerformOperation_Ovr
+    jsr Test_PerfOp_Div_Zero
+    jsr Test_PerfOp_Div_OvrPos
+    jsr Test_PerfOp_Div_OvrNeg
+    jsr Test_PerfOp_Mul_Ovr
+    rts
+
+;=== Variants ===
+
+;----------------
+;--- Div Zero ---
+
+Test_PerfOp_Div_Zero
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerfOp_Err_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $00010000          ;Dividend  1.0
+    dc.l $00000000          ;Divisor   0.0
+    dc.b 0,0,0,'/'
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_Zero',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Div Zero ---
+;----------------
+
+;-------------------
+;--- Div Ovr Pos ---
+
+;32767.5 / 0.5 = 65535.0, integer part exceeds max
+
+Test_PerfOp_Div_OvrPos
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerfOp_Err_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $7FFF8000          ;Dividend  32767.5
+    dc.l $00008000          ;Divisor   0.5
+    dc.b 0,0,0,'/'
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_OvrPos',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Div Ovr Pos ---
+;-------------------
+
+;-------------------
+;--- Div Ovr Neg ---
+
+;-32767.5 / 0.5 = -65535.0, integer part exceeds min
+
+Test_PerfOp_Div_OvrNeg
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerfOp_Err_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $80018000          ;Dividend  -32767.5
+    dc.l $00008000          ;Divisor   0.5
+    dc.b 0,0,0,'/'
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Div_OvrNeg',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- Div Ovr Neg ---
+;-------------------
+
+;-------------------
+;--- MulOverflow ---
+
+Test_PerfOp_Mul_Ovr
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerfOp_Err_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $7FFF0000  ;32767.0
+    dc.l $00020000  ; 2.0
+    dc.b 0,0,0,'*'
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Mul_Ovr',0
+    ORG (*+3)&-4
+
+;--- MulOverflow ---
+;-------------------
+
+;--- PerformOperation Overflow --------
 ;------------------------------------------
 
 ;------------------------------------------
@@ -467,6 +1006,37 @@ Test_PerformOperation_Base
     rts ;Failure
 
 ;--- PerformOperation Base ------------
+;------------------------------------------
+
+;------------------------------------------
+;--- PerformOperation Error Base ------
+
+;Verifies PerformOperation returns Set_False (Z=0) for error cases
+;
+;--- Registers ---
+;   Input
+;   a5 = Name of test for logging
+;   a6 = Address to Input: Left Operand, Right Operand, Operator (3 longs)
+
+Test_PerfOp_Err_Base
+    ;Arrange
+    move.l (a6)+,d5     ;Left Operand
+    move.l (a6)+,d6     ;Right Operand
+    move.l (a6)+,d7     ;Operator
+
+    ;Act
+    jsr PerformOperation
+
+    ;Assert sexpect Set_False (Z=0), fail if Set_True (Z=1)
+    beq .Fail
+    rts
+
+.Fail
+    move.l a5,a0
+    jsr UnitTests__LogFailure
+    rts
+
+;--- PerformOperation Error Base ------
 ;------------------------------------------
 
 ;=== PerformOperation =================

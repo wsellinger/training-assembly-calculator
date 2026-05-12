@@ -460,7 +460,7 @@ Test_Math_FixMul_NNMix
 
 ;------------------------------------------
 ;--- Math_FixMul Over -----------------
-;   32767.0 x 2.0 = 65534.0 � overflows
+;   32767.0 x 2.0 = 65534.0 - overflows
 
 Test_Math_FixMul_Over
     jsr UnitTests_ClearRegisters
@@ -482,7 +482,7 @@ Test_Math_FixMul_Over
 
 ;------------------------------------------
 ;--- Math_FixMul NegOver --------------
-;   -32768.0 x 2.0 = -65536.0 � overflows
+;   -32768.0 x 2.0 = -65536.0 - overflows
 
 Test_Math_FixMul_NegOver
     jsr UnitTests_ClearRegisters
@@ -504,7 +504,7 @@ Test_Math_FixMul_NegOver
 
 ;------------------------------------------
 ;--- Math_FixMul NotOver --------------
-;   181.0 x 181.0 = 32761.0 � just within range
+;   181.0 x 181.0 = 32761.0 - just within range
 
 Test_Math_FixMul_NotOver
     jsr UnitTests_ClearRegisters

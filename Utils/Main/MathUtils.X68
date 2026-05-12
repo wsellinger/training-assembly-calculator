@@ -395,6 +395,7 @@ Math_FixMul
     jsr Math_ApplySign
 
     ;Return
+    and #$00,ccr            ;Clear flags
     bra .Return
 
 .ThrowOverflow
@@ -418,7 +419,7 @@ Math_FixMul
     bmi .ReturnOverflow     ;Then Check Positive Overflow
     bra .ReturnNoOverflow   ;Else No Overflow
 .CheckNegOverflow
-    cmp.l #$80000000,d3     ;If <= $80000000
+    cmp.l #$80000000,d3     ;If > $80000000
     bhi .ReturnOverflow     ;Then Overflow
 .ReturnNoOverflow
     jsr Set_False           ;Else No Overflow
@@ -469,7 +470,7 @@ Math_FixDiv
     jsr Math_StripSigns
 
     ;Binary Long Division to Integer
-    move.l #31, d5      ;Loop full Dividend (32 bits)
+    move.l #31, d5          ;Loop full Dividend (32 bits)
     jsr .BinLongDiv
 
     ;Check for Overflow
@@ -477,13 +478,14 @@ Math_FixDiv
     beq .ThrowOverflow
 
     ;Process Remainder to Fractional
-    move.l #15, d5      ;Loop full Fractional (16 bits)
+    move.l #15, d5          ;Loop full Fractional (16 bits)
     jsr .BinLongDiv
 
     ;Apply Result Sign
     jsr Math_ApplySign
 
     ;Return
+    and #$00,ccr            ;Clear flags
     bra .Return
 
 .ThrowDivideByZero
@@ -531,11 +533,23 @@ Math_FixDiv
 
 ;--- Check Overflow
 .CheckOverflow
+    ;Test integer overflow
     swap d3             ;Get overflow bits
     tst.w d3            ;If exceeds word length (overflow bits non-zero )
     bne .ReturnOverflow ;Return Overflow
     swap d3             ;Else clean up
-    jsr Set_False       ;   No Overflow
+
+    ;Test positive/negative overflow
+    tst.w d0                ;If Negative
+    bne .CheckNegOverflow   ;Then Check Negative Overflow
+    tst.w d3                ;If Positive
+    bmi .ReturnOverflow     ;Then Check Positive Overflow
+    bra .ReturnNoOverflow   ;Else No Overflow
+.CheckNegOverflow
+    cmp.w #$8000,d3         ;If > $8000
+    bhi .ReturnOverflow     ;Then Overflow
+.ReturnNoOverflow
+    jsr Set_False           ;Else No Overflow
     rts
 .ReturnOverflow
     jsr Set_True

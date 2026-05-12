@@ -358,7 +358,7 @@ Test_Math_FixDiv_Over
 
 ;------------------------------------------
 ;--- Math_FixDiv NotOver --------------
-;   0.99998 / (1/65536) = 65535 - just under overflow
+;   0.99998 / (1/65536) = 65535 - well within range
 
 Test_Math_FixDiv_NotOver
     jsr UnitTests_ClearRegisters
@@ -368,9 +368,9 @@ Test_Math_FixDiv_NotOver
     rts
 
 .Input
-    dc.l $0000FFFF     ;Dividend  ~0.99998  (65535/65536)
-    dc.l $00000001     ;Divisor   ~0.0000153 (1/65536)
-    dc.l $FFFF0000     ;Expected  65535.0
+    dc.l $7FFF0000     ;Dividend  32767.0
+    dc.l $00020000     ;Divisor   2.0
+    dc.l $3FFF8000     ;Expected  16383.5
 
 .Name
     dc.b 'UnitTests_MathUtils:Test_Math_FixDiv_NotOver',0
