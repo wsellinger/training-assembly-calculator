@@ -262,48 +262,48 @@ Math_FixMul
     move.l d2,d5    ;Right Factor
 
     ;Multiply Fractional
-    clr.l d2        ;Clear Left Temp
-    clr.l d3        ;Clear Right Temp
-    move.w d4,d2    ;Get Left Fractional
-    move.w d5,d3    ;Get Right Fractional
-    mulu d3,d2      ;Multiply Fractional (Adds Precision)
-    clr.w d2        ;Clear Result Fractional
-    swap d2         ;Move Result Whole to Fractional
-    move.l d2,d1    ;Move Result to Output
+    clr.l d1        ;Clear Left Temp
+    clr.l d2        ;Clear Right Temp
+    move.w d4,d1    ;Get Left Fractional
+    move.w d5,d2    ;Get Right Fractional
+    mulu d2,d1      ;Multiply Fractional (Adds Precision)
+    clr.w d1        ;Clear Result Fractional
+    swap d1         ;Move Result Whole to Fractional
+    move.l d1,d3    ;Move Result to Output
 
     ;Multiply Whole
-    clr.l d2        ;Clear Left Temp
-    clr.l d3        ;Clear Right Temp
-    move.l d4,d2    ;Get Left Whole
+    clr.l d1        ;Clear Left Temp
+    clr.l d2        ;Clear Right Temp
+    move.l d4,d1    ;Get Left Whole
+    clr.w d1        ;  (Clear Fractional)
+    swap d1         ;  (Remove Precision)
+    move.l d5,d2    ;Get Right Whole
     clr.w d2        ;  (Clear Fractional)
     swap d2         ;  (Remove Precision)
-    move.l d5,d3    ;Get Right Whole
-    clr.w d3        ;  (Clear Fractional)
-    swap d3         ;  (Remove Precision)
-    muls d3,d2      ;Multiply Wholes
-    swap d2         ;  (Add Precision)
-    clr.w d2        ;  (Clear Fractional)
-    add.l d2,d1     ;Add to Output
+    muls d2,d1      ;Multiply Wholes
+    swap d1         ;  (Add Precision)
+    clr.w d1        ;  (Clear Fractional)
+    add.l d1,d3     ;Add to Output
 
     ;Multiply Across: Left Whole to Right Fractional
-    clr.l d2        ;Clear Left Temp
-    clr.l d3        ;Clear Right Temp
-    move.l d4,d2    ;Get Left Whole
-    clr.w d2        ;  (Clear Fractional)
-    swap d2         ;  (Remove Precision)
-    move.w d5,d3    ;Get Right Fractional
-    mulu d3,d2      ;Multiply Parts (Adds Precision)
-    add.l d2,d1     ;Add to Output
+    clr.l d1        ;Clear Left Temp
+    clr.l d2        ;Clear Right Temp
+    move.l d4,d1    ;Get Left Whole
+    clr.w d1        ;  (Clear Fractional)
+    swap d1         ;  (Remove Precision)
+    move.w d5,d2    ;Get Right Fractional
+    mulu d2,d1      ;Multiply Parts (Adds Precision)
+    add.l d1,d3     ;Add to Output
 
     ;Multiply Across: Left Fractional to Right Whole
-    clr.l d2        ;Clear Left Temp
-    clr.l d3        ;Clear Right Temp
-    move.w d4,d2    ;Get Left Fractional
-    move.l d5,d3    ;Get Right Whole
-    clr.w d3        ;  (Clear Fractional)
-    swap d3         ;  (Remove Precision)
-    mulu d3,d2      ;Multiply Parts (Adds Precision)
-    add.l d2,d1     ;Add to Output
+    clr.l d1        ;Clear Left Temp
+    clr.l d2        ;Clear Right Temp
+    move.w d4,d1    ;Get Left Fractional
+    move.l d5,d2    ;Get Right Whole
+    clr.w d2        ;  (Clear Fractional)
+    swap d2         ;  (Remove Precision)
+    mulu d2,d1      ;Multiply Parts (Adds Precision)
+    add.l d1,d3     ;Add to Output
     
     jsr Set_True
 
@@ -315,7 +315,6 @@ Math_FixMul
     rts
 ;=== Fixed Point Multiplication =======
 ;==========================================
-
 
 ;==========================================
 ;=== Fixed Point Division =============
