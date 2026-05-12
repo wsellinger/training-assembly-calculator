@@ -229,6 +229,83 @@ Math_Abs
 ;==========================================
 
 ;==========================================
+;=== Strip Signs ======================
+
+;Strips signs from two fixed point values, returns result sign indicator.
+;Modifies d6 as temporary sign storage.
+
+;=== Subroutine ===
+Math_StripSigns
+
+;=== Registers ===
+;   Input/Output
+;   d0 = Is Negative
+;   d1 = Left
+;   d2 = Right
+;
+;   Internal
+;   d3 = Working
+;   d4 = Working
+.Registers reg d3-d4
+
+;=== Logic ===
+;Math_StripSigns
+
+    ;Save Registers
+    movem.l .Registers,-(sp)
+
+    ;Strip Left
+    move.l d1,d0
+    jsr Math_Abs
+    move.w SR,d3        ;Save Left Sign
+    and.l #CCR_Zero,d3  ;Isolate Zero Bit
+    move.l d0,d1        ;Store Absolute Value
+
+    ;Strip Right
+    move.l d2,d0
+    jsr Math_Abs
+    move.w SR,d4        ;Save Right Sign
+    and.l #CCR_Zero,d4  ;Isolate Zero Bit
+    move.l d0,d2        ;Store Absolute Value
+
+    ;Result 
+    eor.l d4,d3         ;Different Signs = Negative
+    move.l d3,d0        ;Store result sign in output
+
+    ;Restore Registers
+    movem.l (sp)+,.Registers
+
+    rts
+
+;=== Strip Signs ======================
+;==========================================
+
+;==========================================
+;=== Apply Sign =======================
+
+;Applies a sign to a fixed point result
+
+;=== Subroutine ===
+Math_ApplySign
+
+;=== Registers ===
+;   Input/Output
+;   d0 = Is Negative
+;   d3 = Result
+
+;=== Logic ===
+;Math_ApplySign
+
+    tst.l d0
+    beq .Positive
+    neg.l d3
+.Positive
+    rts
+
+;=== Apply Sign =======================
+;==========================================
+
+;==========================================
 ;=== Fixed Point Multiplication =======
 
 ;Multiplies 2 fixed point numbers and processes the result to fit within
@@ -244,9 +321,10 @@ Math_FixMul
 ;   d3 = Product
 ;
 ;   Internal
+;   d0 = Result Sign
 ;   d4 = Left Factor
 ;   d5 = Right Factor
-.Registers reg d4-d5
+.Registers reg d0,d4-d5
 
 ;=== Logic ===
 ;Math_FixMul
@@ -254,57 +332,62 @@ Math_FixMul
     ;Save Registers
     movem.l .Registers,-(sp)
 
+    ;Strip Signs
+    jsr Math_StripSigns
+
+    ;Save Absolute Inputs
+    move.l d1,d4            ;Left Factor
+    move.l d2,d5            ;Right Factor
+
     ;TODO check overflow
-    ;TODO this has the signed problem as well, need to make a subroutine that works for mul and div 
-    
-    ;Save Inputs
-    move.l d1,d4    ;Left Factor
-    move.l d2,d5    ;Right Factor
 
     ;Multiply Fractional
-    clr.l d1        ;Clear Left Temp
-    clr.l d2        ;Clear Right Temp
-    move.w d4,d1    ;Get Left Fractional
-    move.w d5,d2    ;Get Right Fractional
-    mulu d2,d1      ;Multiply Fractional (Adds Precision)
-    clr.w d1        ;Clear Result Fractional
-    swap d1         ;Move Result Whole to Fractional
-    move.l d1,d3    ;Move Result to Output
+    clr.l d1                ;Clear Left Temp
+    clr.l d2                ;Clear Right Temp
+    move.w d4,d1            ;Get Left Fractional
+    move.w d5,d2            ;Get Right Fractional
+    mulu d2,d1              ;Multiply Fractional (Adds Precision)
+    clr.w d1                ;Clear Result Fractional
+    swap d1                 ;Move Result Whole to Fractional
+    move.l d1,d3            ;Move Result to Output
 
     ;Multiply Whole
-    clr.l d1        ;Clear Left Temp
-    clr.l d2        ;Clear Right Temp
-    move.l d4,d1    ;Get Left Whole
-    clr.w d1        ;  (Clear Fractional)
-    swap d1         ;  (Remove Precision)
-    move.l d5,d2    ;Get Right Whole
-    clr.w d2        ;  (Clear Fractional)
-    swap d2         ;  (Remove Precision)
-    muls d2,d1      ;Multiply Wholes
-    swap d1         ;  (Add Precision)
-    clr.w d1        ;  (Clear Fractional)
-    add.l d1,d3     ;Add to Output
+    clr.l d1                ;Clear Left Temp
+    clr.l d2                ;Clear Right Temp
+    move.l d4,d1            ;Get Left Whole
+    clr.w d1                ;  (Clear Fractional)
+    swap d1                 ;  (Remove Precision)
+    move.l d5,d2            ;Get Right Whole
+    clr.w d2                ;  (Clear Fractional)
+    swap d2                 ;  (Remove Precision)
+    muls d2,d1              ;Multiply Wholes
+    swap d1                 ;  (Add Precision)
+    clr.w d1                ;  (Clear Fractional)
+    add.l d1,d3             ;Add to Output
 
     ;Multiply Across: Left Whole to Right Fractional
-    clr.l d1        ;Clear Left Temp
-    clr.l d2        ;Clear Right Temp
-    move.l d4,d1    ;Get Left Whole
-    clr.w d1        ;  (Clear Fractional)
-    swap d1         ;  (Remove Precision)
-    move.w d5,d2    ;Get Right Fractional
-    mulu d2,d1      ;Multiply Parts (Adds Precision)
-    add.l d1,d3     ;Add to Output
+    clr.l d1                ;Clear Left Temp
+    clr.l d2                ;Clear Right Temp
+    move.l d4,d1            ;Get Left Whole
+    clr.w d1                ;  (Clear Fractional)
+    swap d1                 ;  (Remove Precision)
+    move.w d5,d2            ;Get Right Fractional
+    mulu d2,d1              ;Multiply Parts (Adds Precision)
+    add.l d1,d3             ;Add to Output
 
     ;Multiply Across: Left Fractional to Right Whole
-    clr.l d1        ;Clear Left Temp
-    clr.l d2        ;Clear Right Temp
-    move.w d4,d1    ;Get Left Fractional
-    move.l d5,d2    ;Get Right Whole
-    clr.w d2        ;  (Clear Fractional)
-    swap d2         ;  (Remove Precision)
-    mulu d2,d1      ;Multiply Parts (Adds Precision)
-    add.l d1,d3     ;Add to Output
-    
+    clr.l d1                ;Clear Left Temp
+    clr.l d2                ;Clear Right Temp
+    move.w d4,d1            ;Get Left Fractional
+    move.l d5,d2            ;Get Right Whole
+    clr.w d2                ;  (Clear Fractional)
+    swap d2                 ;  (Remove Precision)
+    mulu d2,d1              ;Multiply Parts (Adds Precision)
+    add.l d1,d3             ;Add to Output
+
+    ;Apply Sign
+    jsr Math_ApplySign
+
     jsr Set_True
 
 .Return
@@ -313,6 +396,7 @@ Math_FixMul
 
     ;Return
     rts
+
 ;=== Fixed Point Multiplication =======
 ;==========================================
 
@@ -332,10 +416,10 @@ Math_FixDiv
 ;   d3 = Quotient
 ;
 ;   Internal
+;   d0 = Result Sign
 ;   d4 = Remainder
-;   d5 = Result Sign
-;   d6 = Working
-.Registers reg d4-d6
+;   d5 = Working
+.Registers reg d0,d4-d5
 
 ;=== Logic ===
 ;Math_FixDiv
@@ -351,10 +435,10 @@ Math_FixDiv
     beq .ThrowDivideByZero
 
     ;Strip Input Signs, Save Result Sign
-    jsr .StripSigns
+    jsr Math_StripSigns
 
     ;Binary Long Division to Integer
-    move.l #31, d6      ;Loop full Dividend (32 bits)
+    move.l #31, d5      ;Loop full Dividend (32 bits)
     jsr .BinLongDiv
 
     ;Check for Overflow
@@ -362,11 +446,11 @@ Math_FixDiv
     beq .ThrowOverflow
 
     ;Process Remainder to Fractional
-    move.l #15, d6      ;Loop full Fractional (16 bits)
+    move.l #15, d5      ;Loop full Fractional (16 bits)
     jsr .BinLongDiv
 
     ;Apply Result Sign
-    jsr .ApplySign
+    jsr Math_ApplySign
 
     ;Return
     jsr Set_True        ;Set Divide Performed Flag
@@ -392,31 +476,9 @@ Math_FixDiv
 
 ;--- Clear Internal
 .ClearInternal
+    clr.l d0
     clr.l d4
     clr.l d5
-    clr.l d6
-    rts
-;------
-
-;--- Strip Signs
-.StripSigns
-    ;Strip Sign from Dividend
-    move.l d1,d0 
-    jsr Math_Abs
-    move.w SR,d5        ;Save Dividend Sign
-    and.l #CCR_Zero,d5  ;Isolate Sign Bit
-    move.l d0,d1        ;Save Absolute Value Back to Dividend
-
-    ;Strip Sign from Divisor
-    move.l d2,d0 
-    jsr Math_Abs
-    move.w SR,d6        ;Save Divisor Sign
-    and.l #CCR_Zero,d6  ;Isolate Sign Bit
-    move.l d0,d2        ;Save Absolute Value Back to Divisor
-
-    ;Determine Result Sign
-    eor.l d6,d5         ;If Signs are Different, Result is Negative
-
     rts
 ;------
 
@@ -433,7 +495,7 @@ Math_FixDiv
     sub.l d2, d4            ;Else Subtract Divisor
     add.l #1, d3            ;Set result to 1
 .DivSkip
-    dbra d6, .BinLongDiv    ;Set Iterator outside loop
+    dbra d5, .BinLongDiv    ;Set Iterator outside loop
     rts
 ;------
 
@@ -447,15 +509,6 @@ Math_FixDiv
     rts
 .OverFlowSkip
     jsr Set_True
-    rts
-;------
-
-;--- Apply Result Sign
-.ApplySign
-    tst.l d5        ;If zero
-    beq .SignSkip   ;Positive
-    neg.l d3        ;Else Negative
-.SignSkip
     rts
 ;------
 

@@ -10,6 +10,7 @@
 ;==========================================
 
     INCLUDE "Utils/UnitTests/Main/UnitTests_MathUtils/UnitTests_FixedPointDivision.X68"
+    INCLUDE "Utils/UnitTests/Main/UnitTests_MathUtils/UnitTests_FixedPointMultiplication.X68"
 
 ;==========================================
 ;=== Run Tests ========================
@@ -20,6 +21,7 @@ UnitTests_Math__RunTests
     jsr Test_Math_DShift_10
     jsr Test_Math_SimpDiv
     jsr Test_Math_Abs
+    jsr Test_Math_FixMul
     jsr Test_Math_FixDiv
     rts
 
