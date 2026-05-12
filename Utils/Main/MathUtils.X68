@@ -229,6 +229,95 @@ Math_Abs
 ;==========================================
 
 ;==========================================
+;=== Fixed Point Multiplication =======
+
+;Multiplies 2 fixed point numbers and processes the result to fit within
+;   fixed point notation
+
+;=== Subroutine ===
+Math_FixMul
+
+;=== Registers ===
+;   Input/Output
+;   d1 = Left Factor
+;   d2 = Right Factor
+;   d3 = Product
+;
+;   Internal
+;   d4 = Left Factor
+;   d5 = Right Factor
+.Registers reg d4-d5
+
+;=== Logic ===
+;Math_FixMul
+
+    ;Save Registers
+    movem.l .Registers,-(sp)
+
+    ;TODO check overflow
+    ;TODO this has the signed problem as well, need to make a subroutine that works for mul and div 
+    
+    ;Save Inputs
+    move.l d1,d4    ;Left Factor
+    move.l d2,d5    ;Right Factor
+
+    ;Multiply Fractional
+    clr.l d2        ;Clear Left Temp
+    clr.l d3        ;Clear Right Temp
+    move.w d4,d2    ;Get Left Fractional
+    move.w d5,d3    ;Get Right Fractional
+    mulu d3,d2      ;Multiply Fractional (Adds Precision)
+    clr.w d2        ;Clear Result Fractional
+    swap d2         ;Move Result Whole to Fractional
+    move.l d2,d1    ;Move Result to Output
+
+    ;Multiply Whole
+    clr.l d2        ;Clear Left Temp
+    clr.l d3        ;Clear Right Temp
+    move.l d4,d2    ;Get Left Whole
+    clr.w d2        ;  (Clear Fractional)
+    swap d2         ;  (Remove Precision)
+    move.l d5,d3    ;Get Right Whole
+    clr.w d3        ;  (Clear Fractional)
+    swap d3         ;  (Remove Precision)
+    muls d3,d2      ;Multiply Wholes
+    swap d2         ;  (Add Precision)
+    clr.w d2        ;  (Clear Fractional)
+    add.l d2,d1     ;Add to Output
+
+    ;Multiply Across: Left Whole to Right Fractional
+    clr.l d2        ;Clear Left Temp
+    clr.l d3        ;Clear Right Temp
+    move.l d4,d2    ;Get Left Whole
+    clr.w d2        ;  (Clear Fractional)
+    swap d2         ;  (Remove Precision)
+    move.w d5,d3    ;Get Right Fractional
+    mulu d3,d2      ;Multiply Parts (Adds Precision)
+    add.l d2,d1     ;Add to Output
+
+    ;Multiply Across: Left Fractional to Right Whole
+    clr.l d2        ;Clear Left Temp
+    clr.l d3        ;Clear Right Temp
+    move.w d4,d2    ;Get Left Fractional
+    move.l d5,d3    ;Get Right Whole
+    clr.w d3        ;  (Clear Fractional)
+    swap d3         ;  (Remove Precision)
+    mulu d3,d2      ;Multiply Parts (Adds Precision)
+    add.l d2,d1     ;Add to Output
+    
+    jsr Set_True
+
+.Return
+    ;Restore Registers
+    movem.l (sp)+,.Registers
+
+    ;Return
+    rts
+;=== Fixed Point Multiplication =======
+;==========================================
+
+
+;==========================================
 ;=== Fixed Point Division =============
 
 ;Divide 2 fixed point numbers and process the remainder into
@@ -266,7 +355,7 @@ Math_FixDiv
     jsr .StripSigns
 
     ;Binary Long Division to Integer
-    move.l #31, d6  ;Loop full Dividend (32 bits)
+    move.l #31, d6      ;Loop full Dividend (32 bits)
     jsr .BinLongDiv
 
     ;Check for Overflow
@@ -274,13 +363,14 @@ Math_FixDiv
     beq .ThrowOverflow
 
     ;Process Remainder to Fractional
-    move.l #15, d6  ;Loop full Fractional (16 bits)
+    move.l #15, d6      ;Loop full Fractional (16 bits)
     jsr .BinLongDiv
 
     ;Apply Result Sign
     jsr .ApplySign
 
     ;Return
+    jsr Set_True        ;Set Divide Performed Flag
     bra .Return
 
 .ThrowDivideByZero
