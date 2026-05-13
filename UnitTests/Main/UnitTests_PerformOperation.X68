@@ -871,6 +871,10 @@ Test_PerformOperation_Ovr
     jsr Test_PerfOp_Div_OvrPos
     jsr Test_PerfOp_Div_OvrNeg
     jsr Test_PerfOp_Mul_Ovr
+    jsr Test_PerfOp_Add_OvrPos
+    jsr Test_PerfOp_Add_OvrNeg
+    jsr Test_PerfOp_Sub_OvrPos
+    jsr Test_PerfOp_Sub_OvrNeg
     rts
 
 ;=== Variants ===
@@ -973,6 +977,110 @@ Test_PerfOp_Mul_Ovr
     ORG (*+3)&-4
 
 ;--- MulOverflow ---
+;-------------------
+
+;-------------------
+;--- Add Ovr Pos ---
+
+;32767.9999 + 0.0001 = 32768.0, result exceeds max positive
+
+Test_PerfOp_Add_OvrPos
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerfOp_Err_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $7FFFFFFF          ;Left   32767.9999...
+    dc.l $00000001          ;Right  0.0001...
+    dc.b 0,0,0,'+'
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Add_OvrPos',0
+    ORG (*+3)&-4
+
+;--- Add Ovr Pos ---
+;-------------------
+
+;-------------------
+;--- Add Ovr Neg ---
+
+;-32768.0 + -1.0 = -32769.0, result exceeds min negative
+
+Test_PerfOp_Add_OvrNeg
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerfOp_Err_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $80000000          ;Left  -32768.0
+    dc.l $FFFF0000          ;Right  -1.0
+    dc.b 0,0,0,'+'
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Add_OvrNeg',0
+    ORG (*+3)&-4
+
+;--- Add Ovr Neg ---
+;-------------------
+
+;-------------------
+;--- Sub Ovr Pos ---
+
+;32767.0 - -1.0 = 32768.0, result exceeds max positive
+
+Test_PerfOp_Sub_OvrPos
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerfOp_Err_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $7FFF0000          ;Left   32767.0
+    dc.l $FFFF0000          ;Right  -1.0
+    dc.b 0,0,0,'-'
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Sub_OvrPos',0
+    ORG (*+3)&-4
+
+;--- Sub Ovr Pos ---
+;-------------------
+
+;-------------------
+;--- Sub Ovr Neg ---
+
+;-32768.0 - 1.0 = -32769.0, result exceeds min negative
+
+Test_PerfOp_Sub_OvrNeg
+    jsr UnitTests_ClearRegisters
+    lea .Input,a6
+    lea .Name,a5
+    jsr Test_PerfOp_Err_Base
+    rts
+
+;--- Data ---
+
+.Input
+    dc.l $80000000          ;Left  -32768.0
+    dc.l $00010000          ;Right   1.0
+    dc.b 0,0,0,'-'
+
+.Name
+    dc.b 'UnitTests_PerformOperation:Test_PerfOp_Sub_OvrNeg',0
+    ORG (*+3)&-4
+
+;--- Sub Ovr Neg ---
 ;-------------------
 
 ;--- PerformOperation Overflow --------

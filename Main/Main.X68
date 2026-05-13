@@ -538,14 +538,16 @@ PerformOperation
 .Add
     ;Load Left Operand
     move.l d5,d1
-    add.l d6,d1     ;TODO check overflow
+    add.l d6,d1
+    bvs .Error_Overflow
     jsr Set_True
     bra .Return
 
 .Sub
     ;Load Left Operand
     move.l d5,d1
-    sub.l d6,d1    ;TODO check underflow
+    sub.l d6,d1
+    bvs .Error_Overflow
     jsr Set_True
     bra .Return
 
