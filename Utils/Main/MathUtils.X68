@@ -341,8 +341,6 @@ Math_FixMul
     move.l d1,d4            ;Left Factor
     move.l d2,d5            ;Right Factor
 
-    ;TODO check overflow
-
     ;Multiply Fractional
     clr.l d1                ;Clear Left Temp
     clr.l d2                ;Clear Right Temp
