@@ -523,6 +523,9 @@ Test_ProcessInput_Error
     jsr Test_ProcIn_Err_OvrInt
     jsr Test_ProcIn_Err_OvrFrac
     jsr Test_ProcIn_Err_OvrNeg
+    jsr Test_ProcIn_Err_NoOp
+    jsr Test_ProcIn_Err_NoLeft
+    jsr Test_ProcIn_Err_NoRight
     rts
 
 ;=== Variants ===
@@ -652,6 +655,69 @@ Test_ProcIn_Err_OvrNeg
 
 ;--- Ovr Neg --------
 ;--------------------
+
+;--------------------
+;--- No Operator ----
+
+;Expression with no operator - only a single number
+
+Test_ProcIn_Err_NoOp
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Name,a3
+    jsr Test_ProcIn_Err_Base
+    rts
+
+;--- Data ---
+
+.Input      dc.b '1234',0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Err_NoOp',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- No Operator ----
+;--------------------
+
+;----------------------
+;--- No Left Operand ---
+
+;Operator present but no left operand digits precede it
+
+Test_ProcIn_Err_NoLeft
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Name,a3
+    jsr Test_ProcIn_Err_Base
+    rts
+
+;--- Data ---
+
+.Input      dc.b '+42',0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Err_NoLeft',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- No Left Operand ---
+;----------------------
+
+;-----------------------
+;--- No Right Operand ---
+
+;Operator present but no right operand digits follow it
+
+Test_ProcIn_Err_NoRight
+    jsr UnitTests_ClearRegisters
+    lea .Input,a1
+    lea .Name,a3
+    jsr Test_ProcIn_Err_Base
+    rts
+
+;--- Data ---
+
+.Input      dc.b '42+',0
+.Name       dc.b 'UnitTests_ProcessInput:Test_ProcIn_Err_NoRight',0
+    ORG (*+3)&-4 ;Force Long Word alignment
+
+;--- No Right Operand ---
+;-----------------------
 
 ;--- ProcessInput Error ---------------
 ;------------------------------------------

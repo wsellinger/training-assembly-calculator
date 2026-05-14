@@ -175,9 +175,8 @@ ProcessInput
 ;   Internal
 ;   d0 = Current Byte
 ;   d1 = Current Num
-;   d2 = Is Negative
-;   d3 = Precision
-;   d4 = Process Negative
+;   d2 = Precision
+;   d3 = Flags
 ;   a0 = Temp Storage
 ;
 ;   Input
@@ -187,6 +186,12 @@ ProcessInput
 ;   d5 = Left Operand
 ;   d6 = Right Operand
 ;   d7 = Operator
+
+;=== Flags ===
+.FLAG_NEG  equ 0
+.FLAG_END_OP equ 1
+.FLAG_HAS_L_OP equ 2
+.FLAG_HAS_R_OP equ 3
 
 ;=== Logic ===
 ;ProcessInput
@@ -241,19 +246,20 @@ ProcessInput
     beq .Error_Overflow
 
     jsr .UpdatePrecision
-
+    jsr .SetOperandFlag
+    
     bra .LoopOperand
 
 .IsDecimalPoint
     ;Ensure only one decimal point
-    cmp.l #.PrecisionDefault,d3
+    cmp.l #.PrecisionDefault,d2
     bne .Error_OneDec
 
     ;Store Whole Value
     jsr .StoreCurOp
 
     ;Activate Precision Count
-    move.l #0,d3
+    move.l #0,d2
 
     bra .LoopOperand
 
@@ -265,27 +271,27 @@ ProcessInput
     ;Store Operator
     move.b d0,d7
 
-    ;End Operand
-
-    ;Validate ;TODO implement
-    ;ensure correct value size
-    
-    ;Store Operand
-    move.b #1,d4 ;Set to Process Negative for Left Operand
+    ;Store Left Operand    
+    bset #.FLAG_END_OP,d3  ;Set Process Negative
     jsr .StoreLeftOp
     bne .Error_Overflow
     
     bra .LoopOperation
 
 .IsEnd
-    ;Store Operand
-    move.b #1,d4 ;Set to Process Negative for Right Operand
+    ;Store Right Operand
+    bset #.FLAG_END_OP,d3  ;Set Process Negative
     jsr .StoreRightOp
     bne .Error_Overflow
 
-    ;Validate
-    ;ensure we have 2 operands and an operator ;TODO implement
-    
+    ;Validate Operation Structure
+    btst #.FLAG_HAS_L_OP,d3
+    beq .Error_Struct
+    btst #.FLAG_HAS_R_OP,d3
+    beq .Error_Struct
+    tst.l d7
+    beq .Error_Struct
+
     jsr Set_True
     bra .Return
 
@@ -298,6 +304,13 @@ ProcessInput
 
 .Error_OneDec
     lea .ErrorMsg_OneDec,a0
+    lea Main_ErrorMsgPtr,a1
+    move.l a0,(a1)
+    jsr Set_False
+    bra .Return
+
+.Error_Struct
+    lea .ErrorMsg_Struct,a0
     lea Main_ErrorMsgPtr,a1
     move.l a0,(a1)
     jsr Set_False
@@ -326,8 +339,7 @@ ProcessInput
 .ClearInternal
     clr.l d0
     clr.l d1
-    clr.l d2
-    move.l #.PrecisionDefault,d3 ;use max as default as 0 is a valid precision
+    move.l #.PrecisionDefault,d2 ;use max as default as 0 is a valid precision
     clr.l d4
     rts
 ;------
@@ -343,7 +355,7 @@ ProcessInput
 .CheckIsNeg
     cmp.b #'-',(a1)             ;If Not Negative 
     bne .NotNegative            ;Then Skip
-    move.b #1,d2                ;Else Set isNegative
+    bset #.FLAG_NEG,d3          ;Else Set isNegative
     add.l #1,a1                 ;Advance Pointer
 .NotNegative
     rts
@@ -351,7 +363,7 @@ ProcessInput
 
 ;--- Is Overflow
 .IsOver
-    cmp.l #.PrecisionDefault,d3 ;If not Integer
+    cmp.l #.PrecisionDefault,d2 ;If not Integer
     bne .CheckFractV            ;Then Fractional
 
     ;Check Integer Overflow
@@ -362,8 +374,8 @@ ProcessInput
     ;Check Edge Case
     cmp.l #$00008000,d1         ;If not -32768
     bne .IsOver_True            ;Then Overflow
-    cmp.b #1,d2                 ;If not Negative
-    bne .IsOver_True            ;Then Overflow
+    btst #.FLAG_NEG,d3          ;If not Negative
+    beq .IsOver_True            ;Then Overflow
     bra .IsOver_False           ;Else No Overflow
 
     ;Check Fractional Overflow
@@ -382,13 +394,25 @@ ProcessInput
 ;--- Update Precision
 .UpdatePrecision
     ;If Precision
-    cmp.l #.PrecisionDefault,d3 ;If Whole
+    cmp.l #.PrecisionDefault,d2 ;If Whole
     bne .IncPrecision           ;Else Fractional
     rts
     
     ;Increment Precision
 .IncPrecision
-    add.w #1,d3                 ;Increment
+    add.w #1,d2                 ;Increment
+    rts
+;------
+
+;--- Set Operand Flag
+.SetOperandFlag
+    tst.l d7
+    bne .SetHasROp
+;.SetHasLOp
+    bset #.FLAG_HAS_L_OP,d3
+    rts
+.SetHasROp
+    bset #.FLAG_HAS_R_OP,d3
     rts
 ;------
 
@@ -439,7 +463,7 @@ ProcessInput
     swap d1                     ;Swap, if whole it needs to be in the top, if fractional it needs to be shifted down from the top
 
     ;Check Precision
-    cmp.l #.PrecisionDefault,d3 ;If Whole
+    cmp.l #.PrecisionDefault,d2 ;If Whole
     beq .SkipFract              ;Then Skip Fractional Conversion
     jsr .ProcessFract
 .SkipFract
@@ -449,7 +473,7 @@ ProcessInput
 ;--- Process Fractional
 .ProcessFract
 .ProcessFractWhile
-    dbra d3,.ProcessFractDo     ;While Precision    (check conditional first, don't want to shift if no precision, also removes need to pre decrement)
+    dbra d2,.ProcessFractDo     ;While Precision    (check conditional first, don't want to shift if no precision, also removes need to pre decrement)
     rts                         ;Else Exit Loop
 .ProcessFractDo                 ;Do Shift
     jsr Math_DivShift_10        ;Divide D1 by 10 using shifting math to allow operations above word boundary
@@ -458,16 +482,16 @@ ProcessInput
 
 ;--- Process Negative
 .ProcessNegative
-    tst.b d4            ;If Not Process Negative
-    beq .ProcNegReturn  ;Then Return
-    tst.b d2            ;If Not Negative
-    beq .ProcNegReturn  ;Then Return
-    cmp.l #$80000000,d1 ;If Value is already Min Negative
-    bhi .ProcNegError   ;Then Error, overflow
-    neg.l d1            ;Else Convert to Negative
+    btst #.FLAG_END_OP,d3       ;If Not End of Operand
+    beq .ProcNegReturn          ;Then Return
+    btst #.FLAG_NEG,d3          ;If Not Negative
+    beq .ProcNegReturn          ;Then Return
+    cmp.l #$80000000,d1         ;If Value is already Min Negative
+    bhi .ProcNegError           ;Then Error, overflow
+    neg.l d1                    ;Else Convert to Negative
 
 .ProcNegReturn
-    clr.b d4            ;Clear Process Negative
+    bclr #.FLAG_END_OP,d3       ;Clear End of Operand
     jsr Set_True
     rts
 
@@ -485,7 +509,8 @@ ProcessInput
 
 .ErrorMsg_BadChar dc.b 'Invalid operation: Invalid character',0
 .ErrorMsg_OneDec dc.b 'Invalid operation: Only one decimal point per operand',0
-.ErrorMsg_OneOp dc.b 'Invalid operation: Only one operand allowed',0
+.ErrorMsg_Struct dc.b 'Invalid operation: Must have 2 operands and 1 operator',0
+.ErrorMsg_OneOp dc.b 'Invalid operation: Only one operator allowed',0
 .ErrorMsg_Over dc.b 'Invalid operation: Number too large',0
 
     ORG (*+3)&-4 ;Force Long Word alignment
